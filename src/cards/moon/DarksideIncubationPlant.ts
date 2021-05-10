@@ -12,7 +12,7 @@ import {CardRenderer} from '../render/CardRenderer';
 import {CardRenderDynamicVictoryPoints} from '../render/CardRenderDynamicVictoryPoints';
 import {Units} from '../../Units';
 import {MoonCard} from './MoonCard';
-import {CardRenderItemSize} from '../render/CardRenderItemSize';
+import {LogHelper} from '../../LogHelper';
 
 export class DarksideIncubationPlant extends MoonCard implements IActionCard, IProjectCard {
   constructor() {
@@ -34,7 +34,7 @@ export class DarksideIncubationPlant extends MoonCard implements IActionCard, IP
             eb.empty().startAction.microbes(1);
           }).br;
           b.action('Spend 2 microbes to raise the Colony Rate 1 step.', (eb) => {
-            eb.microbes(2).startAction.moonColonyRate({size: CardRenderItemSize.SMALL});
+            eb.microbes(2).startAction.moonColonyRate();
           });
 
           b.br;
@@ -60,13 +60,14 @@ export class DarksideIncubationPlant extends MoonCard implements IActionCard, IP
   public action(player: Player) {
     const options: Array<SelectOption> = [];
     options.push(new SelectOption('Add 1 microbe to this card', 'Select', () => {
-      this.resourceCount++;
+      player.addResourceTo(this, 1);
       return undefined;
     }));
     MoonExpansion.ifMoon(player.game, (moonData) => {
       if (this.resourceCount >= 2 && moonData.colonyRate < 8) {
         options.push(new SelectOption('Spend 2 microbes to raise the Colony Rate 1 step.', 'Select', () => {
-          this.resourceCount -= 2;
+          player.removeResourceFrom(this, 2);
+          LogHelper.logRemoveResource(player, this, 2, 'raise the Colony Rate');
           MoonExpansion.raiseColonyRate(player);
           return undefined;
         }));

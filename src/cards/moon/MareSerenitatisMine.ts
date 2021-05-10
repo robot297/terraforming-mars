@@ -12,6 +12,7 @@ import {IProjectCard} from '../IProjectCard';
 import {IMoonCard} from './IMoonCard';
 import {TileType} from '../../TileType';
 import {MoonCard} from './MoonCard';
+import {AltSecondaryTag} from '../render/CardRenderItem';
 
 export class MareSerenitatisMine extends MoonCard implements IProjectCard, IMoonCard {
   constructor() {
@@ -23,13 +24,13 @@ export class MareSerenitatisMine extends MoonCard implements IProjectCard, IMoon
       productionBox: Units.of({steel: 1, titanium: 1}),
 
       metadata: {
-        description: 'Spend 2 titanium and 1 steel. Increase your steel production 1 step and your titanium production 1 step. ' +
+        description: 'Spend 2 titanium and 1 steel. Increase your steel and titanium production 1 step ' +
         'Place a mine ON THE RESERVED AREA and a road tile adjacent to it. Raise the Mining Rate 1 step and the Logistic Rate 1 step.',
         cardNumber: 'M04',
         renderData: CardRenderer.builder((b) => {
           b.minus().titanium(2).minus().steel(1).br;
           b.production((pb) => pb.steel(1).titanium(1)).br;
-          b.moonMine().asterix().nbsp.moonRoad().asterix();
+          b.moonMine().secondaryTag(AltSecondaryTag.MOON_MINING_RATE).asterix().nbsp.moonRoad().secondaryTag(AltSecondaryTag.MOON_MINING_RATE).asterix();
         }),
       },
     }, {

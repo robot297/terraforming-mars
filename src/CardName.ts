@@ -464,13 +464,15 @@ export enum CardName {
     MAGNETIC_FIELD_GENERATORS_PROMO = 'Magnetic Field Generators:promo',
     ASTEROID_RIGHTS = 'Asteroid Rights',
     BIO_PRINTING_FACILITY = 'Bio Printing Facility',
+    BACTOVIRAL_RESEARCH = 'Bactoviral Research',
 
     // Community corps
     AGRICOLA_INC = 'Agricola Inc',
-    PROJECT_WORKSHOP = 'Project Workshop',
+    CURIOSITY_II = 'Curiosity II',
     INCITE = 'Incite',
-    PLAYWRIGHTS = 'Playwrights',
     MIDAS = 'Midas',
+    PLAYWRIGHTS = 'Playwrights',
+    PROJECT_WORKSHOP = 'Project Workshop',
 
     // Community preludes
     VALUABLE_GASES = 'Valuable Gases',

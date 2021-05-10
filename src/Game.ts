@@ -65,6 +65,7 @@ import {TurmoilHandler} from './turmoil/TurmoilHandler';
 import {Random} from './Random';
 import {MilestoneAwardSelector} from './MilestoneAwardSelector';
 import {BoardType} from './boards/BoardType';
+import {Multiset} from './utils/Multiset';
 
 export type GameId = string;
 export type SpectatorId = string;
@@ -318,7 +319,7 @@ export class Game implements ISerializable<SerializedGame> {
       corporationCards = customCorporationCards;
     }
 
-    corporationCards = dealer.shuffleCards(corporationCards);
+    corporationCards = Dealer.shuffle(corporationCards);
 
     // Failsafe for exceding corporation pool
     if (gameOptions.startingCorporations * players.length > corporationCards.length) {
@@ -368,6 +369,10 @@ export class Game implements ISerializable<SerializedGame> {
     if (players.length === 1) {
       game.log('The id of this game is ${0}', (b) => b.rawString(id));
     }
+
+    players.forEach((player) => {
+      game.log('Good luck ${0}!', (b) => b.player(player), {reservedFor: player});
+    });
 
     game.log('Generation ${0}', (b) => b.forNewGeneration().number(game.generation));
 
@@ -490,7 +495,7 @@ export class Game implements ISerializable<SerializedGame> {
 
   public milestoneClaimed(milestone: IMilestone): boolean {
     return this.claimedMilestones.find(
-      (claimedMilestone) => claimedMilestone.milestone === milestone,
+      (claimedMilestone) => claimedMilestone.milestone.name === milestone.name,
     ) !== undefined;
   }
 
@@ -582,7 +587,7 @@ export class Game implements ISerializable<SerializedGame> {
 
   public hasBeenFunded(award: IAward): boolean {
     return this.fundedAwards.find(
-      (fundedAward) => fundedAward.award === award,
+      (fundedAward) => fundedAward.award.name === award.name,
     ) !== undefined;
   }
 
@@ -719,7 +724,7 @@ export class Game implements ISerializable<SerializedGame> {
     this.save();
     for (const player of this.players) {
       if (player.pickedCorporationCard === undefined && player.dealtCorporationCards.length > 0) {
-        player.setWaitingFor(this.pickCorporationCard(player), () => {});
+        player.setWaitingFor(this.pickCorporationCard(player));
       }
     }
     if (this.players.length === 1 && this.gameOptions.coloniesExtension) {
@@ -749,6 +754,10 @@ export class Game implements ISerializable<SerializedGame> {
       return this.generation === this.lastSoloGeneration();
     }
     return this.marsIsTerraformed();
+  }
+
+  public isDoneWithFinalProduction(): boolean {
+    return this.phase === Phase.END || (this.gameIsOver() && this.phase === Phase.PRODUCTION);
   }
 
   private gotoProductionPhase(): void {
@@ -935,11 +944,11 @@ export class Game implements ISerializable<SerializedGame> {
 
     // Change initial draft direction on second iteration
     if (this.generation === 1 && this.initialDraftIteration === 2) {
-      nextPlayer = this.getPreviousPlayer(this.players, player);
+      nextPlayer = this.getPlayerBefore(player);
     } else if (this.generation % 2 === 1) {
-      nextPlayer = this.getNextPlayer(this.players, player);
+      nextPlayer = this.getPlayerAfter(player);
     } else {
-      nextPlayer = this.getPreviousPlayer(this.players, player);
+      nextPlayer = this.getPlayerBefore(player);
     }
 
     if (nextPlayer !== undefined) {
@@ -949,13 +958,13 @@ export class Game implements ISerializable<SerializedGame> {
   }
 
   private getNextDraft(player: Player): Player {
-    let nextPlayer = this.getNextPlayer(this.players, player);
+    let nextPlayer = this.getPlayerAfter(player);
     if (this.generation%2 === 1) {
-      nextPlayer = this.getPreviousPlayer(this.players, player);
+      nextPlayer = this.getPlayerBefore(player);
     }
     // Change initial draft direction on second iteration
     if (this.initialDraftIteration === 2 && this.generation === 1) {
-      nextPlayer = this.getNextPlayer(this.players, player);
+      nextPlayer = this.getPlayerAfter(player);
     }
 
     if (nextPlayer !== undefined) {
@@ -964,10 +973,8 @@ export class Game implements ISerializable<SerializedGame> {
     return player;
   }
 
-  private getPreviousPlayer(
-    players: Array<Player>, player: Player,
-  ): Player | undefined {
-    const playerIndex: number = players.indexOf(player);
+  private getPlayerBefore(player: Player): Player | undefined {
+    const playerIndex: number = this.players.indexOf(player);
 
     // The player was not found
     if (playerIndex === -1) {
@@ -975,13 +982,11 @@ export class Game implements ISerializable<SerializedGame> {
     }
 
     // Go to the end of the array if stand at the start
-    return players[(playerIndex === 0) ? players.length - 1 : playerIndex - 1];
+    return this.players[(playerIndex === 0) ? this.players.length - 1 : playerIndex - 1];
   }
 
-  private getNextPlayer(
-    players: Array<Player>, player: Player,
-  ): Player | undefined {
-    const playerIndex: number = players.indexOf(player);
+  private getPlayerAfter(player: Player): Player | undefined {
+    const playerIndex: number = this.players.indexOf(player);
 
     // The player was not found
     if (playerIndex === -1) {
@@ -989,7 +994,7 @@ export class Game implements ISerializable<SerializedGame> {
     }
 
     // Go to the beginning of the array if we reached the end
-    return players[(playerIndex + 1 >= players.length) ? 0 : playerIndex + 1];
+    return this.players[(playerIndex + 1 >= this.players.length) ? 0 : playerIndex + 1];
   }
 
 
@@ -1005,7 +1010,7 @@ export class Game implements ISerializable<SerializedGame> {
       return;
     }
 
-    const nextPlayer = this.getNextPlayer(this.players, this.getPlayerById(this.activePlayer));
+    const nextPlayer = this.getPlayerAfter(this.getPlayerById(this.activePlayer));
 
     // Defensive coding to fail fast, if we don't find the next
     // player we are in an unexpected game state
@@ -1057,6 +1062,8 @@ export class Game implements ISerializable<SerializedGame> {
   }
 
   private gotoFinalGreeneryPlacement(): void {
+    this.log('Final greenery placement', (b) => b.forNewGeneration());
+
     const players: Player[] = [];
 
     this.players.forEach((player) => {
@@ -1080,7 +1087,7 @@ export class Game implements ISerializable<SerializedGame> {
     while (
       firstPlayer !== undefined && players.includes(firstPlayer) === false
     ) {
-      firstPlayer = this.getNextPlayer(this.players, firstPlayer);
+      firstPlayer = this.getPlayerAfter(firstPlayer);
     }
 
     if (firstPlayer !== undefined) {
@@ -1194,10 +1201,10 @@ export class Game implements ISerializable<SerializedGame> {
     if (this.phase !== Phase.SOLAR) {
       // BONUS FOR HEAT PRODUCTION AT -20 and -24
       if (this.temperature < -24 && this.temperature + steps * 2 >= -24) {
-        player.addProduction(Resources.HEAT);
+        player.addProduction(Resources.HEAT, 1);
       }
       if (this.temperature < -20 && this.temperature + steps * 2 >= -20) {
-        player.addProduction(Resources.HEAT);
+        player.addProduction(Resources.HEAT, 1);
       }
 
       TurmoilHandler.onGlobalParameterIncrease(player, GlobalParameter.TEMPERATURE, steps);
@@ -1220,49 +1227,6 @@ export class Game implements ISerializable<SerializedGame> {
 
   public getTemperature(): number {
     return this.temperature;
-  }
-
-  public checkRequirements(player: Player, parameter: GlobalParameter, level: number, max: boolean = false): boolean {
-    let currentLevel: number;
-    let playerRequirementsBonus: number = player.getRequirementsBonus(parameter);
-
-    switch (parameter) {
-    case GlobalParameter.OCEANS:
-      currentLevel = this.board.getOceansOnBoard();
-      break;
-    case GlobalParameter.OXYGEN:
-      currentLevel = this.getOxygenLevel();
-      break;
-    case GlobalParameter.TEMPERATURE:
-      currentLevel = this.getTemperature();
-      playerRequirementsBonus *= 2;
-      break;
-
-    case GlobalParameter.VENUS:
-      currentLevel = this.getVenusScaleLevel();
-      playerRequirementsBonus *= 2;
-      break;
-
-    case GlobalParameter.MOON_COLONY_RATE:
-      currentLevel = MoonExpansion.moonData(player.game).colonyRate;
-      break;
-    case GlobalParameter.MOON_MINING_RATE:
-      currentLevel = MoonExpansion.moonData(player.game).miningRate;
-      break;
-    case GlobalParameter.MOON_LOGISTICS_RATE:
-      currentLevel = MoonExpansion.moonData(player.game).logisticRate;
-      break;
-
-    default:
-      console.warn(`Unknown GlobalParameter provided: ${parameter}`);
-      return false;
-    }
-
-    if (max) {
-      return currentLevel <= level + playerRequirementsBonus;
-    } else {
-      return currentLevel >= level - playerRequirementsBonus;
-    }
   }
 
   public getGeneration(): number {
@@ -1364,8 +1328,9 @@ export class Game implements ISerializable<SerializedGame> {
     // Part 5. Collect the bonuses
     if (this.phase !== Phase.SOLAR) {
       if (!coveringExistingTile) {
-        space.bonus.forEach((spaceBonus) => {
-          this.grantSpaceBonus(player, spaceBonus);
+        const bonuses = new Multiset(space.bonus);
+        bonuses.entries().forEach(([bonus, count]) => {
+          this.grantSpaceBonus(player, bonus, count);
         });
       }
 
@@ -1395,7 +1360,6 @@ export class Game implements ISerializable<SerializedGame> {
       });
     });
 
-
     AresHandler.ifAres(this, () => {
       AresHandler.grantBonusForRemovingHazard(player, initialTileTypeForAres);
     });
@@ -1407,17 +1371,17 @@ export class Game implements ISerializable<SerializedGame> {
     LogHelper.logTilePlacement(player, space, tile.tileType);
   }
 
-  public grantSpaceBonus(player: Player, spaceBonus: SpaceBonus) {
+  public grantSpaceBonus(player: Player, spaceBonus: SpaceBonus, count: number = 1) {
     if (spaceBonus === SpaceBonus.DRAW_CARD) {
-      player.drawCard();
+      player.drawCard(count);
     } else if (spaceBonus === SpaceBonus.PLANT) {
-      player.plants++;
+      player.addResource(Resources.PLANTS, count, {log: true});
     } else if (spaceBonus === SpaceBonus.STEEL) {
-      player.steel++;
+      player.addResource(Resources.STEEL, count, {log: true});
     } else if (spaceBonus === SpaceBonus.TITANIUM) {
-      player.titanium++;
+      player.addResource(Resources.TITANIUM, count, {log: true});
     } else if (spaceBonus === SpaceBonus.HEAT) {
-      player.heat++;
+      player.addResource(Resources.HEAT, count, {log: true});
     }
   }
 
@@ -1518,12 +1482,14 @@ export class Game implements ISerializable<SerializedGame> {
     return player.cardsInHand.filter((card) => card.cardType === cardType);
   }
 
-  public log(message: string, f?: (builder: LogBuilder) => void) {
+  public log(message: string, f?: (builder: LogBuilder) => void, options?: {reservedFor?: Player}) {
     const builder = new LogBuilder(message);
     if (f) {
       f(builder);
     }
-    this.gameLog.push(builder.logMessage());
+    const logMessage = builder.build();
+    logMessage.playerId = options?.reservedFor?.id;
+    this.gameLog.push(logMessage);
     this.gameAge++;
   }
 
@@ -1593,10 +1559,6 @@ export class Game implements ISerializable<SerializedGame> {
 
     const awards: Array<IAward> = [];
     d.awards.forEach((element: IAward) => {
-      // TODO(kberg): remove by 2021-03-30
-      if (element.name === 'Entrepeneur') {
-        element.name = 'Entrepreneur';
-      }
       ALL_AWARDS.forEach((award: IAward) => {
         if (award.name === element.name) {
           awards.push(award);

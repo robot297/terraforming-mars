@@ -23,14 +23,14 @@ export class LunarMineUrbanization extends Card implements IProjectCard {
       // NOTE(kberg): Rules were that it says it Requires 1 mine tile. Changing to "Requires you have 1 mine tile."
       requirements: CardRequirements.builder((b) => b.miningTiles(1)),
       metadata: {
-        description: 'Requires you have 1 mine tile. Increase your MC production 1 step. Replace one of your mine tiles ' +
+        description: 'Requires you have 1 mine tile. Increase your M€ production 1 step. Replace one of your mine tiles ' +
         'with this special tile. Raise the Colony Rate 1 step. This tile counts both as a colony and a mine tile.',
         cardNumber: 'M55',
 
         renderData: CardRenderer.builder((b) => {
           b.production((pb) => pb.megacredits(1)).br;
           b.moonColonyRate();
-          b.tile(TileType.LUNAR_MINE_URBANIZATION, false).asterix();
+          b.tile(TileType.LUNAR_MINE_URBANIZATION, true).asterix();
         }),
       },
     });
@@ -38,7 +38,7 @@ export class LunarMineUrbanization extends Card implements IProjectCard {
 
   public play(player: Player) {
     player.addProduction(Resources.MEGACREDITS, 1);
-    const tiles = MoonExpansion.tiles(player.game, TileType.MOON_MINE, false).filter((space) => space.player?.id === player.id);
+    const tiles = MoonExpansion.tiles(player.game, TileType.MOON_MINE, {ownedBy: player});
     return new SelectSpace('Select one of your mines to upgrade', tiles, (space) => {
       if (space.tile === undefined) {
         throw new Error(`Space ${space.id} should have a tile, how doesn't it?`);
