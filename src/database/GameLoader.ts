@@ -119,13 +119,16 @@ export class GameLoader implements IGameLoader {
   public restoreGameAt(gameId: GameId, saveId: number, cb: LoadCallback): void {
     try {
       Database.getInstance().restoreGame(gameId, saveId, (err, game) => {
-        if (game !== undefined) {
+        if (err) {
+          console.error('error while restoring game', err);
+          cb(undefined);
+        } else if (game !== undefined) {
           Database.getInstance().deleteGameNbrSaves(gameId, 1);
           this.add(game);
           game.undoCount++;
           cb(game);
         } else {
-          console.log(err);
+          console.error('game not found while restoring game', err);
           cb(undefined);
         }
       });

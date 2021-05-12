@@ -21,7 +21,7 @@ export class CometForVenus extends Card {
       cost: 11,
 
       metadata: {
-        description: 'Raise Venus 1 step. Remove up to 4MC from any player WITH A VENUS TAG IN PLAY.',
+        description: 'Raise Venus 1 step. Remove up to 4M€ from any player WITH A VENUS TAG IN PLAY.',
         cardNumber: '218',
         renderData: CardRenderer.builder((b) => {
           b.venus(1).nbsp.nbsp.minus().megacredits(4).secondaryTag(Tags.VENUS).any;
@@ -51,16 +51,16 @@ export class CometForVenus extends Card {
       return new OrOptions(
         new SelectPlayer(
           Array.from(venusTagPlayers),
-          'Select player to remove up to 4 mega credits from',
-          'Remove MC',
+          'Select player to remove up to 4 M€ from',
+          'Remove M€',
           (selectedPlayer: Player) => {
-            selectedPlayer.setResource(Resources.MEGACREDITS, -4, player.game, player);
+            selectedPlayer.addResource(Resources.MEGACREDITS, -4, {log: true, from: player});
             player.game.increaseVenusScaleLevel(player, 1);
             return undefined;
           },
         ),
         new SelectOption(
-          'Do not remove mega credits',
+          'Do not remove M€',
           'Confirm',
           () => {
             player.game.increaseVenusScaleLevel(player, 1);

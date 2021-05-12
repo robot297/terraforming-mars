@@ -3,7 +3,7 @@
   e.g. Any tag, tile, production cube, ocean, temperature, etc.
  */
 import {CardRenderItemType} from './CardRenderItemType';
-import {CardRenderItemSize} from './CardRenderItemSize';
+import {Size} from './Size';
 import {Tags} from '../Tags';
 
 // Tags that belong in `CardRenderItem.secondaryTag` that aren't part of `Tags`.
@@ -17,10 +17,14 @@ export enum AltSecondaryTag {
   FLOATER = 'floater',
   // 'blue' => used in Project Workshop
   BLUE = 'blue',
+
+  MOON_MINING_RATE = 'moon-mine',
+  MOON_COLONY_RATE = 'moon-colony',
+  MOON_LOGISTICS_RATE = 'moon-road',
 }
 
 export interface ItemOptions {
-  size?: CardRenderItemSize | 'small' | 'medium' | 'large' | 'tiny';
+  size?: Size;
   amount?: number;
 }
 
@@ -34,7 +38,7 @@ export class CardRenderItem {
   public isUppercase?: boolean; // for uppercase text
   public isBold?: boolean; // for bold text
   public isPlate?: boolean; // used to mark plate a.k.a. text with golden background
-  public size?: CardRenderItemSize;
+  public size?: Size;
   // adding tag dependency (top right bubble)
   public secondaryTag?: Tags | AltSecondaryTag;
   // use this for amount labels like 2x, x, etc.
@@ -51,25 +55,7 @@ export class CardRenderItem {
     if (options === undefined) {
       return this;
     }
-    // TODO(kberg): This is fine for now, but eventually this can move to CardRenderer, and the composer wouldn't even care about the enum.
-    switch (options.size) {
-    case 'small':
-    case CardRenderItemSize.SMALL:
-      this.size = CardRenderItemSize.SMALL;
-      break;
-    case 'medium':
-    case CardRenderItemSize.MEDIUM:
-      this.size = CardRenderItemSize.MEDIUM;
-      break;
-    case 'large':
-    case CardRenderItemSize.LARGE:
-      this.size = CardRenderItemSize.LARGE;
-      break;
-    case 'tiny':
-    case CardRenderItemSize.TINY:
-      this.size = CardRenderItemSize.TINY;
-      break;
-    }
+    this.size = options.size;
     if (options.amount !== undefined) {
       this.amount = options.amount;
     }

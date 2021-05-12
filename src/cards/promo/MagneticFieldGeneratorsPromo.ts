@@ -22,7 +22,7 @@ export class MagneticFieldGeneratorsPromo extends Card implements IProjectCard {
       cost: 22,
 
       metadata: {
-        cardNumber: '165',
+        cardNumber: 'X33',
         renderData: CardRenderer.builder((b) => {
           b.production((pb) => {
             pb.minus().energy(4).digit.br;
@@ -30,7 +30,7 @@ export class MagneticFieldGeneratorsPromo extends Card implements IProjectCard {
           }).br;
           b.tr(3).digit.tile(TileType.MAGNETIC_FIELD_GENERATORS, true).asterix();
         }),
-        description: 'Decrease your Energy production 4 steps and increase your Plant production 2 step. Raise your TR 3 step.',
+        description: 'Decrease your Energy production 4 steps and increase your Plant production 2 steps. Raise your TR 3 steps.',
       },
     });
   }

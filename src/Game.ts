@@ -370,6 +370,10 @@ export class Game implements ISerializable<SerializedGame> {
       game.log('The id of this game is ${0}', (b) => b.rawString(id));
     }
 
+    players.forEach((player) => {
+      game.log('Good luck ${0}!', (b) => b.player(player), {reservedFor: player});
+    });
+
     game.log('Generation ${0}', (b) => b.forNewGeneration().number(game.generation));
 
     // Initial Draft
@@ -720,7 +724,7 @@ export class Game implements ISerializable<SerializedGame> {
     this.save();
     for (const player of this.players) {
       if (player.pickedCorporationCard === undefined && player.dealtCorporationCards.length > 0) {
-        player.setWaitingFor(this.pickCorporationCard(player), () => {});
+        player.setWaitingFor(this.pickCorporationCard(player));
       }
     }
     if (this.players.length === 1 && this.gameOptions.coloniesExtension) {
@@ -1058,6 +1062,8 @@ export class Game implements ISerializable<SerializedGame> {
   }
 
   private gotoFinalGreeneryPlacement(): void {
+    this.log('Final greenery placement', (b) => b.forNewGeneration());
+
     const players: Player[] = [];
 
     this.players.forEach((player) => {
@@ -1195,10 +1201,10 @@ export class Game implements ISerializable<SerializedGame> {
     if (this.phase !== Phase.SOLAR) {
       // BONUS FOR HEAT PRODUCTION AT -20 and -24
       if (this.temperature < -24 && this.temperature + steps * 2 >= -24) {
-        player.addProduction(Resources.HEAT);
+        player.addProduction(Resources.HEAT, 1);
       }
       if (this.temperature < -20 && this.temperature + steps * 2 >= -20) {
-        player.addProduction(Resources.HEAT);
+        player.addProduction(Resources.HEAT, 1);
       }
 
       TurmoilHandler.onGlobalParameterIncrease(player, GlobalParameter.TEMPERATURE, steps);
@@ -1369,13 +1375,13 @@ export class Game implements ISerializable<SerializedGame> {
     if (spaceBonus === SpaceBonus.DRAW_CARD) {
       player.drawCard(count);
     } else if (spaceBonus === SpaceBonus.PLANT) {
-      player.plants += count;
+      player.addResource(Resources.PLANTS, count, {log: true});
     } else if (spaceBonus === SpaceBonus.STEEL) {
-      player.steel += count;
+      player.addResource(Resources.STEEL, count, {log: true});
     } else if (spaceBonus === SpaceBonus.TITANIUM) {
-      player.titanium += count;
+      player.addResource(Resources.TITANIUM, count, {log: true});
     } else if (spaceBonus === SpaceBonus.HEAT) {
-      player.heat += count;
+      player.addResource(Resources.HEAT, count, {log: true});
     }
   }
 
@@ -1476,12 +1482,14 @@ export class Game implements ISerializable<SerializedGame> {
     return player.cardsInHand.filter((card) => card.cardType === cardType);
   }
 
-  public log(message: string, f?: (builder: LogBuilder) => void) {
+  public log(message: string, f?: (builder: LogBuilder) => void, options?: {reservedFor?: Player}) {
     const builder = new LogBuilder(message);
     if (f) {
       f(builder);
     }
-    this.gameLog.push(builder.logMessage());
+    const logMessage = builder.build();
+    logMessage.playerId = options?.reservedFor?.id;
+    this.gameLog.push(logMessage);
     this.gameAge++;
   }
 

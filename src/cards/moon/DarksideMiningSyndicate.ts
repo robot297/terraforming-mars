@@ -22,7 +22,7 @@ export class DarksideMiningSyndicate extends Card implements IProjectCard {
         cardNumber: 'M66',
         renderData: CardRenderer.builder((b) => {
           b.production((pb) => pb.titanium(2)).or().br;
-          b.moonMiningRate({size: 'small', amount: 2}).colon().production((pb) => pb.nbsp.titanium(1)).br;
+          b.moonMiningRate({amount: 2}).colon().production((pb) => pb.titanium(1)).br;
           b.moonMiningRate().br;
         }),
       },
