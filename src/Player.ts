@@ -301,7 +301,7 @@ export class Player implements ISerializable<SerializedPlayer> {
       const monsInsuranceOwner: Player = this.game.getPlayerById(this.game.monsInsuranceOwner);
       const retribution: number = Math.min(monsInsuranceOwner.megaCredits, 3);
       this.megaCredits += retribution;
-      monsInsuranceOwner.addResource(Resources.MEGACREDITS, -3);
+      monsInsuranceOwner.deductResource(Resources.MEGACREDITS, 3);
       if (retribution > 0) {
         this.game.log('${0} received ${1} M€ from ${2} owner (${3})', (b) =>
           b.player(this)
@@ -337,18 +337,60 @@ export class Player implements ISerializable<SerializedPlayer> {
     });
   }
 
-  public addResource(resource: Resources, amount: number, options? : { log: boolean, from? : Player | GlobalEventName}) {
-    const delta = (amount >= 0) ? amount : Math.max(amount, -this.getResource(resource));
+  public deductResource(
+    resource: Resources,
+    amount: number,
+    options? : {
+      log?: boolean,
+      from? : Player | GlobalEventName,
+    }) {
+    this.addResource(resource, -amount, options);
+  }
+
+  public addResource(
+    resource: Resources,
+    amount: number,
+    options? : {
+      log?: boolean,
+      from? : Player | GlobalEventName,
+    }) {
+    // When amount is negative, sometimes the amount being asked to be removed is more than the player has.
+    // delta represents an adjusted amount which basically declares that a player cannot lose more resources
+    // then they have.
+    const playerAmount = this.getResource(resource);
+    const delta = (amount >= 0) ? amount : Math.max(amount, -playerAmount);
+
+    // Lots of calls to addResource used to deduct resources are done by cards and/or players stealing some
+    // fixed amount which, if the current player doesn't have it. it just removes as much as possible.
+    // (eg. Sabotage.) That's what the delta above, is for.
+    //
+    // But if the intent is to remove the amount requested (spending 8 plants to place a greenery) then there
+    // better be 8 units. The code outside this call is responsible in those cases for making sure the player
+    // has enough resource units to pay for an action.
+    //
+    // In those cases, if the player calls this, but the logic is wrong, the player could wind up with a
+    // negative amount of units. This will break other actions in the game. So instead, this method deducts as
+    // much as possible, and lots that there was a game error.
+    //
+    // The shortcut for knowing if this is the case is when `options.from` is undefined.
+    if (delta !== amount && options?.from === undefined) {
+      this.game.logIllegalState(
+        `Adjusting ${amount} ${resource} when player has ${playerAmount}`,
+        {player: {color: this.color, id: this.id, name: this.name}, resource, amount});
+    }
 
     if (resource === Resources.MEGACREDITS) this.megaCredits += delta;
-    if (resource === Resources.STEEL) this.steel += delta;
-    if (resource === Resources.TITANIUM) this.titanium += delta;
-    if (resource === Resources.PLANTS) this.plants += delta;
-    if (resource === Resources.ENERGY) this.energy += delta;
-    if (resource === Resources.HEAT) this.heat += delta;
+    else if (resource === Resources.STEEL) this.steel += delta;
+    else if (resource === Resources.TITANIUM) this.titanium += delta;
+    else if (resource === Resources.PLANTS) this.plants += delta;
+    else if (resource === Resources.ENERGY) this.energy += delta;
+    else if (resource === Resources.HEAT) this.heat += delta;
+    else {
+      throw new Error(`tried to add unsupported resource ${resource}`);
+    }
 
     if (options?.log === true) {
-      this.logUnitDelta(resource, amount, 'amount', options.from);
+      this.logUnitDelta(resource, delta, 'amount', options.from);
     }
 
     if (options?.from instanceof Player) {
@@ -357,29 +399,35 @@ export class Player implements ISerializable<SerializedPlayer> {
     }
 
     // Mons Insurance hook
-    if (options?.from !== undefined && amount < 0 && (options.from instanceof Player && options.from.id !== this.id)) {
+    if (options?.from !== undefined && delta < 0 && (options.from instanceof Player && options.from.id !== this.id)) {
       this.resolveMonsInsurance();
     }
   }
 
   public addProduction(resource: Resources, amount : number, options? : { log: boolean, from? : Player | GlobalEventName}) {
-    if (resource === Resources.MEGACREDITS) this.megaCreditProduction = Math.max(-5, this.megaCreditProduction + amount);
-    if (resource === Resources.STEEL) this.steelProduction = Math.max(0, this.steelProduction + amount);
-    if (resource === Resources.TITANIUM) this.titaniumProduction = Math.max(0, this.titaniumProduction + amount);
-    if (resource === Resources.PLANTS) this.plantProduction = Math.max(0, this.plantProduction + amount);
-    if (resource === Resources.ENERGY) this.energyProduction = Math.max(0, this.energyProduction + amount);
-    if (resource === Resources.HEAT) this.heatProduction = Math.max(0, this.heatProduction + amount);
+    const adj = resource === Resources.MEGACREDITS ? -5 : 0;
+    const delta = (amount >= 0) ? amount : Math.max(amount, -(this.getProduction(resource) - adj));
+
+    if (resource === Resources.MEGACREDITS) this.megaCreditProduction += delta;
+    else if (resource === Resources.STEEL) this.steelProduction += delta;
+    else if (resource === Resources.TITANIUM) this.titaniumProduction += delta;
+    else if (resource === Resources.PLANTS) this.plantProduction += delta;
+    else if (resource === Resources.ENERGY) this.energyProduction += delta;
+    else if (resource === Resources.HEAT) this.heatProduction += delta;
+    else {
+      throw new Error(`tried to add unsupported production ${resource}`);
+    }
 
     if (options?.log === true) {
       this.logUnitDelta(resource, amount, 'production', options.from);
     }
 
     if (options?.from instanceof Player) {
-      LawSuit.resourceHook(this, resource, amount, options.from);
+      LawSuit.resourceHook(this, resource, delta, options.from);
     }
 
     // Mons Insurance hook
-    if (options?.from !== undefined && amount < 0 && (options.from instanceof Player && options.from.id !== this.id)) {
+    if (options?.from !== undefined && delta < 0 && (options.from instanceof Player && options.from.id !== this.id)) {
       this.resolveMonsInsurance();
     }
 
@@ -400,12 +448,12 @@ export class Player implements ISerializable<SerializedPlayer> {
   }
 
   public deductUnits(units: Units) {
-    this.megaCredits -= units.megacredits;
-    this.steel -= units.steel;
-    this.titanium -= units.titanium;
-    this.plants -= units.plants;
-    this.energy -= units.energy;
-    this.heat -= units.heat;
+    this.deductResource(Resources.MEGACREDITS, units.megacredits);
+    this.deductResource(Resources.STEEL, units.steel);
+    this.deductResource(Resources.TITANIUM, units.titanium);
+    this.deductResource(Resources.PLANTS, units.plants);
+    this.deductResource(Resources.ENERGY, units.energy);
+    this.deductResource(Resources.HEAT, units.heat);
   }
 
   public canAdjustProduction(units: Units): boolean {
@@ -840,9 +888,7 @@ export class Player implements ISerializable<SerializedPlayer> {
     }
   }
 
-  // This is only public for a test. It's not great.
-  // TODO(kberg): Fix that.
-  public runInput(input: ReadonlyArray<ReadonlyArray<string>>, pi: PlayerInput): void {
+  protected runInput(input: ReadonlyArray<ReadonlyArray<string>>, pi: PlayerInput): void {
     if (pi instanceof AndOptions) {
       this.checkInputLength(input, pi.options.length);
       for (let i = 0; i < input.length; i++) {
@@ -1332,10 +1378,11 @@ export class Player implements ISerializable<SerializedPlayer> {
   public playCard(selectedCard: IProjectCard, howToPay?: HowToPay, addToPlayedCards: boolean = true): undefined {
     // Pay for card
     if (howToPay !== undefined) {
-      this.steel -= howToPay.steel;
-      this.titanium -= howToPay.titanium;
-      this.megaCredits -= howToPay.megaCredits;
-      this.heat -= howToPay.heat;
+      this.deductResource(Resources.STEEL, howToPay.steel);
+      this.deductResource(Resources.TITANIUM, howToPay.titanium);
+      this.deductResource(Resources.MEGACREDITS, howToPay.megaCredits);
+      this.deductResource(Resources.HEAT, howToPay.heat);
+
       for (const playedCard of this.playedCards) {
         if (playedCard.name === CardName.PSYCHROPHILES) {
           this.removeResourceFrom(playedCard, howToPay.microbes);
@@ -1466,7 +1513,7 @@ export class Player implements ISerializable<SerializedPlayer> {
     if (this.isCorporation(CardName.STORMCRAFT_INCORPORATED) && this.getResourcesOnCorporation() > 0 ) {
       return (<StormCraftIncorporated> this.corporationCard).spendHeat(this, amount, cb);
     }
-    this.heat -= amount;
+    this.deductResource(Resources.HEAT, amount);
     return cb();
   }
 
@@ -1495,11 +1542,11 @@ export class Player implements ISerializable<SerializedPlayer> {
               },
             ));
           } else if (payWith === Resources.ENERGY) {
-            this.energy -= energyTradeAmount;
+            this.deductResource(Resources.ENERGY, energyTradeAmount);
             this.game.log('${0} spent ${1} energy to trade with ${2}', (b) => b.player(this).number(energyTradeAmount).colony(colony));
             colony.trade(this);
           } else if (payWith === Resources.TITANIUM) {
-            this.titanium -= titaniumTradeAmount;
+            this.deductResource(Resources.TITANIUM, titaniumTradeAmount);
             this.game.log('${0} spent ${1} titanium to trade with ${2}', (b) => b.player(this).number(titaniumTradeAmount).colony(colony));
             colony.trade(this);
           } else if (payWith === ResourceType.FLOATER && titanFloatingLaunchPad !== undefined && titanFloatingLaunchPad.resourceCount) {
@@ -1656,7 +1703,8 @@ export class Player implements ISerializable<SerializedPlayer> {
           this.game.board.getAvailableSpacesForGreenery(this), (space) => {
             // Do not raise oxygen or award TR for final greenery placements
             this.game.addGreenery(this, space.id, SpaceType.LAND, false);
-            this.plants -= this.plantsNeededForGreenery;
+            this.deductResource(Resources.PLANTS, this.plantsNeededForGreenery);
+
             this.takeActionForFinalGreenery();
 
             // Resolve Philares deferred actions
