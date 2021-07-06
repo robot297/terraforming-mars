@@ -5,16 +5,16 @@ import {Card} from './card/Card';
 import Milestone from './Milestone.vue';
 import Award from './Award.vue';
 import {PlayersOverview} from './overview/PlayersOverview';
-import {WaitingFor} from './WaitingFor';
+import WaitingFor from './WaitingFor.vue';
 import {Sidebar} from './Sidebar';
 import {PlayerModel, PublicPlayerModel} from '../models/PlayerModel';
 import Colony from './Colony.vue';
-import {LogPanel} from './LogPanel';
+import LogPanel from './LogPanel.vue';
 import {PlayerMixin} from './PlayerMixin';
-import {Turmoil} from './Turmoil';
+import Turmoil from './Turmoil.vue';
 import {playerColorClass} from '../utils/utils';
 import {DynamicTitle} from './common/DynamicTitle';
-import {Button} from './common/Button';
+import Button from './common/Button.vue';
 import {SortableCards} from './SortableCards';
 import TopBar from './TopBar.vue';
 import {PreferencesManager} from './PreferencesManager';
@@ -73,7 +73,7 @@ export const PlayerHome = Vue.component('player-home', {
     'colony': Colony,
     'log-panel': LogPanel,
     'turmoil': Turmoil,
-    'Button': Button,
+    Button,
     'sortable-cards': SortableCards,
     'top-bar': TopBar,
     'moonboard': MoonBoard,

@@ -5,7 +5,7 @@ import {PaymentWidgetMixin} from './PaymentWidgetMixin';
 import {PlayerInputModel} from '../models/PlayerInputModel';
 import {PlayerModel} from '../models/PlayerModel';
 import {PreferencesManager} from './PreferencesManager';
-import {Button} from '../components/common/Button';
+import Button from '../components/common/Button.vue';
 import {TranslateMixin} from './TranslateMixin';
 
 interface SelectHowToPayModel {
@@ -38,7 +38,7 @@ export const SelectHowToPay = Vue.component('select-how-to-pay', {
     },
   },
   components: {
-    'Button': Button,
+    Button,
   },
   data: function() {
     return {
@@ -148,6 +148,7 @@ export const SelectHowToPay = Vue.component('select-how-to-pay', {
         titanium: this.$data.titanium,
         microbes: 0,
         floaters: 0,
+        science: 0,
       };
 
       if (htp.megaCredits > this.player.megaCredits) {
