@@ -63,13 +63,6 @@ export class Turmoil implements ISerializable<SerializedTurmoil> {
       this.globalEventDealer = globalEventDealer;
     }
 
-    public static getTurmoil(game: Game): Turmoil {
-      if (game.turmoil === undefined) {
-        throw new Error('Turmoil not defined');
-      }
-      return game.turmoil;
-    }
-
     public static newInstance(game: Game, agendaStyle: AgendaStyle = AgendaStyle.STANDARD): Turmoil {
       const dealer = GlobalEventDealer.newInstance(game);
 
@@ -102,6 +95,34 @@ export class Turmoil implements ISerializable<SerializedTurmoil> {
       turmoil.onAgendaSelected(game);
       turmoil.initGlobalEvent(game);
       return turmoil;
+    }
+
+    public static getTurmoil(game: Game): Turmoil {
+      if (game.turmoil === undefined) {
+        throw new Error(`Assertion error: Turmoil not defined for ${game.id}`);
+      }
+      return game.turmoil;
+    }
+
+    public static ifTurmoil(game: Game, cb: (turmoil: Turmoil) => void) {
+      if (game.gameOptions.turmoilExtension !== false) {
+        if (game.turmoil === undefined) {
+          console.log(`Assertion failure: game.turmoil is undefined for ${game.id}`);
+        } else {
+          return cb(game.turmoil);
+        }
+      }
+    }
+
+    public static ifTurmoilElse<T>(game: Game, cb: (turmoil: Turmoil) => T, elseCb: () => T): T {
+      if (game.gameOptions.turmoilExtension !== false) {
+        if (game.turmoil === undefined) {
+          console.log(`Assertion failure: game.turmoil is undefined for ${game.id}`);
+        } else {
+          return cb(game.turmoil);
+        }
+      }
+      return elseCb();
     }
 
     public initGlobalEvent(game: Game) {
