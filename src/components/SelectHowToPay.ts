@@ -1,23 +1,12 @@
 
 import Vue from 'vue';
 import {HowToPay} from '../inputs/HowToPay';
-import {PaymentWidgetMixin} from './PaymentWidgetMixin';
+import {PaymentWidgetMixin, SelectHowToPayModel} from './PaymentWidgetMixin';
 import {PlayerInputModel} from '../models/PlayerInputModel';
 import {PlayerModel} from '../models/PlayerModel';
 import {PreferencesManager} from './PreferencesManager';
 import Button from '../components/common/Button.vue';
 import {TranslateMixin} from './TranslateMixin';
-
-interface SelectHowToPayModel {
-    cost: number;
-    heat: number;
-    megaCredits: number;
-    steel: number;
-    titanium: number;
-    microbes: number;
-    floaters: number;
-    warning: string | undefined;
-}
 
 export const SelectHowToPay = Vue.component('select-how-to-pay', {
   props: {
@@ -169,7 +158,7 @@ export const SelectHowToPay = Vue.component('select-how-to-pay', {
       }
 
       const requiredAmt = this.playerinput.amount || 0;
-      const totalSpentAmt = htp.heat + htp.megaCredits + (htp.steel * this.player.steelValue) + (htp.titanium * this.player.titaniumValue) + (htp.microbes * 2) + (htp.floaters * 3);
+      const totalSpentAmt = htp.heat + htp.megaCredits + (htp.steel * this.player.steelValue) + (htp.titanium * this.player.titaniumValue);
 
       if (requiredAmt > 0 && totalSpentAmt < requiredAmt) {
         this.$data.warning = 'Haven\'t spent enough';
