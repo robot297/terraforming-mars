@@ -1,9 +1,10 @@
 
-import {createLocalVue, mount} from '@vue/test-utils';
+import {mount} from '@vue/test-utils';
+import {getLocalVue} from './getLocalVue';
 
 import {expect} from 'chai';
-import Milestone from '../../src/components/Milestone.vue';
-import {ClaimedMilestoneModel} from '../../src/models/ClaimedMilestoneModel';
+import Milestone from '@/client/components/Milestone.vue';
+import {ClaimedMilestoneModel} from '@/models/ClaimedMilestoneModel';
 
 describe('Milestone', function() {
   const mockMilestone: ClaimedMilestoneModel = {
@@ -17,12 +18,7 @@ describe('Milestone', function() {
     player_color: 'blue',
     scores: [],
   };
-  function getLocalVue() {
-    const localVue = createLocalVue();
-    localVue.directive('trim-whitespace', {});
-    localVue.directive('i18n', {});
-    return localVue;
-  }
+
   it('shows list and milestones', async function() {
     const milestone = mount(Milestone, {
       localVue: getLocalVue(),

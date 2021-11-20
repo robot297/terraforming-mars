@@ -3,14 +3,26 @@ import {Color} from '../Color';
 import {VictoryPointsBreakdown} from '../VictoryPointsBreakdown';
 import {ITagCount} from '../ITagCount';
 import {PlayerInputModel} from './PlayerInputModel';
-import {SerializedTimer} from '../SerializedTimer';
+import {TimerModel} from './TimerModel';
 import {GameModel} from './GameModel';
+import {PlayerId} from '../Player';
+import {SpectatorId} from '../Game';
+import {CardName} from '@/CardName';
 
+export interface ViewModel {
+  game: GameModel;
+  players: Array<PublicPlayerModel>;
+  id: PlayerId | SpectatorId;
+  thisPlayer: PublicPlayerModel | undefined;
+}
+
+/** The public information about a player */
 export interface PublicPlayerModel {
   actionsTakenThisRound: number;
   actionsThisGeneration: Array<string /* CardName */>;
   availableBlueCardActionCount: number;
   cardCost: number;
+  cardDiscount: number;
   cardsInHandNbr: number;
   citiesCount: number;
   coloniesCount: number;
@@ -21,9 +33,11 @@ export interface PublicPlayerModel {
   fleetSize: number;
   heat: number;
   heatProduction: number;
-  id: string; // PlayerId
+  // TODO(kberg): this is removeable now.
+  id: string; // Color
   influence: number;
   isActive: boolean;
+  lastCardPlayed?: CardName;
   megaCredits: number;
   megaCreditProduction: number;
   name: string;
@@ -34,14 +48,13 @@ export interface PublicPlayerModel {
   plantProduction: number;
   plantsAreProtected: boolean;
   playedCards: Array<CardModel>;
-  preludeCardsInHand: Array<CardModel>;
   selfReplicatingRobotsCards: Array<CardModel>;
   steel: number;
   steelProduction: number;
   steelValue: number;
   tags: Array<ITagCount>;
   terraformRating: number;
-  timer: SerializedTimer;
+  timer: TimerModel;
   titanium: number;
   titaniumProduction: number;
   titaniumValue: number;
@@ -49,14 +62,16 @@ export interface PublicPlayerModel {
   victoryPointsBreakdown: VictoryPointsBreakdown;
 }
 
-export interface PlayerModel extends PublicPlayerModel {
+/** A player's view of the game, including their secret information. */
+export interface PlayerViewModel extends ViewModel {
   cardsInHand: Array<CardModel>;
   dealtCorporationCards: Array<CardModel>;
   dealtPreludeCards: Array<CardModel>;
   dealtProjectCards: Array<CardModel>;
   draftedCards: Array<CardModel>;
-  game: GameModel;
+  id: PlayerId;
   pickedCorporationCard: Array<CardModel>; // Why Array?
-  players: Array<PublicPlayerModel>;
+  preludeCardsInHand: Array<CardModel>;
+  thisPlayer: PublicPlayerModel;
   waitingFor: PlayerInputModel | undefined;
 }

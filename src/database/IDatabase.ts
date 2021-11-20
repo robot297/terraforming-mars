@@ -43,6 +43,11 @@ export type DbLoadCallback<T> = (err: Error | undefined, game: T | undefined) =>
 export interface IDatabase {
 
     /**
+     * Creates any tables needed
+     */
+    initialize(): Promise<void>;
+
+    /**
      * Pulls most recent version of game
      * @param game_id the game id to load
      * @param cb called with game if exists. If game is undefined err will be truthy.
@@ -91,7 +96,7 @@ export interface IDatabase {
      * Saves the current state of the game. at a supplied save point. Used for
      * interim game updates.
      */
-    saveGame(game: Game): void;
+    saveGame(game: Game): Promise<void>;
 
     /**
      * Stores the results of a game in perpetuity in a separate table from normal

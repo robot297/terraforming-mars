@@ -19,8 +19,9 @@ export class OpenCity extends Card implements IProjectCard {
       tags: [Tags.CITY, Tags.BUILDING],
       cost: 23,
       productionBox: Units.of({energy: -1, megacredits: 4}),
-
       requirements: CardRequirements.builder((b) => b.oxygen(12)),
+      victoryPoints: 1,
+
       metadata: {
         cardNumber: '108',
         renderData: CardRenderer.builder((b) => {
@@ -33,13 +34,12 @@ export class OpenCity extends Card implements IProjectCard {
           text: 'Requires 12% oxygen. Gain 2 plants. Place a City tile. Decrease your Energy production 1 step and increase your M€ production 4 steps.',
           align: 'left',
         },
-        victoryPoints: 1,
       },
     });
   }
 
   public canPlay(player: Player): boolean {
-    return super.canPlay(player) && player.getProduction(Resources.ENERGY) >= 1 && player.game.board.getAvailableSpacesForCity(player).length > 0;
+    return player.getProduction(Resources.ENERGY) >= 1 && player.game.board.getAvailableSpacesForCity(player).length > 0;
   }
   public play(player: Player) {
     return new SelectSpace('Select space for city tile', player.game.board.getAvailableSpacesForCity(player), (space: ISpace) => {
@@ -49,8 +49,5 @@ export class OpenCity extends Card implements IProjectCard {
       player.plants += 2;
       return undefined;
     });
-  }
-  public getVictoryPoints() {
-    return 1;
   }
 }

@@ -26,6 +26,8 @@ import {Color} from '../src/Color';
 import {RandomMAOptionType} from '../src/RandomMAOptionType';
 import {SpaceBonus} from '../src/SpaceBonus';
 import {TileType} from '../src/TileType';
+import {ALL_AWARDS} from '../src/awards/Awards';
+import {ALL_MILESTONES} from '../src/milestones/Milestones';
 
 describe('Game', () => {
   it('should initialize with right defaults', () => {
@@ -599,7 +601,7 @@ describe('Game', () => {
   it('grant space bonus sanity test', () => {
     const player = TestPlayers.BLUE.newPlayer();
     const game = Game.newInstance('foobar', [player], player);
-    const space = game.board.getAvailableSpacesOnLand()[0];
+    const space = game.board.getAvailableSpacesOnLand(player)[0];
 
     space.bonus = [SpaceBonus.DRAW_CARD, SpaceBonus.DRAW_CARD, SpaceBonus.DRAW_CARD, SpaceBonus.DRAW_CARD, SpaceBonus.PLANT, SpaceBonus.TITANIUM];
     expect(player.cardsInHand).has.length(0);
@@ -625,12 +627,13 @@ describe('Game', () => {
     const serializedKeys = Object.keys(serialized);
     const gameKeys = Object.keys(game);
     expect(gameKeys).not.include('moonData');
-    expect(serializedKeys).to.have.members(gameKeys.concat('moonData'));
+    expect(gameKeys).not.include('pathfindersData');
+    expect(serializedKeys).to.have.members(gameKeys.concat('moonData', 'pathfindersData'));
   });
 
   it('serializes every property', () => {
     const player = TestPlayers.BLUE.newPlayer();
-    const game = Game.newInstance('foobar', [player], player, TestingUtils.setCustomGameOptions({moonExpansion: true}));
+    const game = Game.newInstance('foobar', [player], player, TestingUtils.setCustomGameOptions({moonExpansion: true, pathfindersExpansion: true}));
     const serialized = game.serialize();
     const serializedKeys = Object.keys(serialized);
     const gameKeys = Object.keys(game);
@@ -644,5 +647,41 @@ describe('Game', () => {
     delete serialized['moonData'];
     const deserialized = Game.deserialize(serialized);
     expect(deserialized.moonData).is.undefined;
+  });
+
+  it('deserializing a game without altVenusBoard has a default value', () => {
+    const player = TestPlayers.BLUE.newPlayer();
+    const game = Game.newInstance('foobar', [player], player, TestingUtils.setCustomGameOptions({altVenusBoard: true}));
+    const serialized = game.serialize();
+    (serialized.gameOptions as any).altVenusBoard = undefined;
+    const deserialized = Game.deserialize(serialized);
+    expect(deserialized.gameOptions.altVenusBoard).is.false;
+  });
+
+  it('deserializing a game without pathfinders still loads', () => {
+    const player = TestPlayers.BLUE.newPlayer();
+    const game = Game.newInstance('foobar', [player], player, TestingUtils.setCustomGameOptions({pathfindersExpansion: false}));
+    const serialized = game.serialize();
+    (serialized.gameOptions as any).pathfindersData = undefined;
+    const deserialized = Game.deserialize(serialized);
+    expect(deserialized.pathfindersData).is.undefined;
+  });
+
+  it('deserializing a game with award as an object', () => {
+    const player = TestPlayers.BLUE.newPlayer();
+    const game = Game.newInstance('foobar', [player], player, TestingUtils.setCustomGameOptions({pathfindersExpansion: false}));
+    const serialized = game.serialize();
+    serialized.awards = serialized.awards.map((a) => ALL_AWARDS.find((b) => b.name === a)!);
+    const deserialized = Game.deserialize(serialized);
+    expect(deserialized.awards).deep.eq(game.awards);
+  });
+
+  it('deserializing a game with milestone as an object', () => {
+    const player = TestPlayers.BLUE.newPlayer();
+    const game = Game.newInstance('foobar', [player], player, TestingUtils.setCustomGameOptions({pathfindersExpansion: false}));
+    const serialized = game.serialize();
+    serialized.milestones = serialized.milestones.map((a) => ALL_MILESTONES.find((b) => b.name === a)!);
+    const deserialized = Game.deserialize(serialized);
+    expect(deserialized.milestones).deep.eq(game.milestones);
   });
 });

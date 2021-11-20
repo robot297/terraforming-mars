@@ -2,6 +2,7 @@ import {IActionCard, IResourceCard} from '../ICard';
 import {IProjectCard} from '../IProjectCard';
 import {Tags} from '../Tags';
 import {Card} from '../Card';
+import {VictoryPoints} from '../ICard';
 import {CardType} from '../CardType';
 import {Player} from '../../Player';
 import {ResourceType} from '../../ResourceType';
@@ -10,7 +11,7 @@ import {AddResourcesToCard} from '../../deferredActions/AddResourcesToCard';
 import {RemoveResourcesFromCard} from '../../deferredActions/RemoveResourcesFromCard';
 import {CardRequirements} from '../CardRequirements';
 import {CardRenderer} from '../render/CardRenderer';
-import {CardRenderDynamicVictoryPoints} from '../render/CardRenderDynamicVictoryPoints';
+import {all} from '../Options';
 
 export class Predators extends Card implements IProjectCard, IActionCard, IResourceCard {
   constructor() {
@@ -19,28 +20,25 @@ export class Predators extends Card implements IProjectCard, IActionCard, IResou
       name: CardName.PREDATORS,
       tags: [Tags.ANIMAL],
       cost: 14,
-      resourceType: ResourceType.ANIMAL,
 
+      resourceType: ResourceType.ANIMAL,
+      victoryPoints: VictoryPoints.resource(1, 1),
       requirements: CardRequirements.builder((b) => b.oxygen(11)),
+
       metadata: {
         cardNumber: '024',
         renderData: CardRenderer.builder((b) => {
           b.action('Remove 1 Animal from any card and add it to this card.', (eb) => {
-            eb.animals(1).any.startAction.animals(1);
+            eb.animals(1, {all}).startAction.animals(1);
           }).br;
           b.vpText('1 VP per Animal on this card.');
         }),
         description: 'Requires 11% oxygen.',
-        victoryPoints: CardRenderDynamicVictoryPoints.animals(1, 1),
       },
     });
   }
 
     public resourceCount: number = 0;
-
-    public getVictoryPoints(): number {
-      return this.resourceCount;
-    }
 
     public play() {
       return undefined;

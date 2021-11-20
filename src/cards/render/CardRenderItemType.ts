@@ -61,4 +61,7 @@ export enum CardRenderItemType {
   MOON_MINE = 'moon-mine',
   MOON_MINING_RATE = 'moon-mine-rate',
   SYNDICATE_FLEET = 'syndicate-fleet',
+  MARS = 'mars',
+  VENUSIAN_HABITAT = 'venusian-habitat',
+  SPECIALIZED_ROBOT = 'specialized-robot',
 }

@@ -1,13 +1,13 @@
 
-import {createLocalVue, mount} from '@vue/test-utils';
-
+import {mount} from '@vue/test-utils';
+import {getLocalVue} from './getLocalVue';
 import {expect} from 'chai';
-import PlayerInputFactory from '../../src/components/PlayerInputFactory.vue';
-import {PlayerInputTypes} from '../../src/PlayerInputTypes';
-import {CardModel} from '../../src/models/CardModel';
-import {PlayerInputModel} from '../../src/models/PlayerInputModel';
-import {Units} from '../../src/Units';
-import {CardName} from '../../src/CardName';
+import PlayerInputFactory from '@/client/components/PlayerInputFactory.vue';
+import {PlayerInputTypes} from '@/PlayerInputTypes';
+import {CardModel} from '@/models/CardModel';
+import {PlayerInputModel} from '@/models/PlayerInputModel';
+import {Units} from '@/Units';
+import {CardName} from '@/CardName';
 
 const baseInput = {
   amount: undefined,
@@ -127,18 +127,13 @@ const typesToTest: PlayerInputModel[] = [
 ];
 
 describe('PlayerInputFactory', function() {
-  function getLocalVue() {
-    const localVue = createLocalVue();
-    localVue.directive('i18n', {});
-    return localVue;
-  }
   for (const playerinput of typesToTest) {
     it(`saves data for ${playerinput.inputType}`, async function() {
       const component = mount(PlayerInputFactory, {
         localVue: getLocalVue(),
         propsData: {
           players: [],
-          player: {
+          playerView: {
             id: 'foo',
           },
           playerinput,

@@ -10,6 +10,7 @@ import {CardName} from '../../CardName';
 import {IResourceCard} from '../ICard';
 import {DeferredAction} from '../../deferredActions/DeferredAction';
 import {CardRenderer} from '../render/CardRenderer';
+import {played} from '../Options';
 
 export class OlympusConference extends Card implements IProjectCard, IResourceCard {
   constructor() {
@@ -19,16 +20,16 @@ export class OlympusConference extends Card implements IProjectCard, IResourceCa
       tags: [Tags.SCIENCE, Tags.EARTH, Tags.BUILDING],
       cost: 10,
       resourceType: ResourceType.SCIENCE,
+      victoryPoints: 1,
 
       metadata: {
         cardNumber: '185',
         renderData: CardRenderer.builder((b) => {
-          b.science().played.colon().science().br;
+          b.science(1, {played}).colon().science().br;
           b.or().br;
           b.minus().science().plus().cards(1);
         }),
         description: 'When you play a Science tag, including this, either add a Science resource to this card, or remove a Science resource from this card to draw a card.',
-        victoryPoints: 1,
       },
     });
   }
@@ -64,8 +65,5 @@ export class OlympusConference extends Card implements IProjectCard, IResourceCa
     }
     public play() {
       return undefined;
-    }
-    public getVictoryPoints() {
-      return 1;
     }
 }

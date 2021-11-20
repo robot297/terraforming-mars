@@ -8,7 +8,7 @@ import {VictoryPointsBreakdown} from '../src/VictoryPointsBreakdown';
 export class TestPlayer extends Player {
   public victoryPointsBreakdown = new VictoryPointsBreakdown();
   constructor(color: Color) {
-    super('player-' + color, color, false, 0, color + '-id');
+    super('player-' + color, color, false, 0, 'p-' + color + '-id');
   }
 
   public setProductionForTest(units: Partial<Units>) {
@@ -32,6 +32,28 @@ export class TestPlayer extends Player {
     }
   }
 
+  public getProductionForTest(): Units {
+    return {
+      megacredits: this.megaCreditProduction,
+      steel: this.steelProduction,
+      titanium: this.titaniumProduction,
+      plants: this.plantProduction,
+      energy: this.energyProduction,
+      heat: this.heatProduction,
+    };
+  }
+
+  public getResourcesForTest(): Units {
+    return {
+      megacredits: this.megaCredits,
+      steel: this.steel,
+      titanium: this.titanium,
+      plants: this.plants,
+      energy: this.energy,
+      heat: this.heat,
+    };
+  }
+
   public getVictoryPoints(): VictoryPointsBreakdown {
     this.victoryPointsBreakdown = super.getVictoryPoints();
     return this.victoryPointsBreakdown;
@@ -43,11 +65,16 @@ export class TestPlayer extends Player {
 
   public tagsForTest: Partial<TagsForTest> | undefined = undefined;
 
-  public getTagCount(tag: Tags, includeEventsTags:boolean = false, includeWildcardTags:boolean = true): number {
+  public getTagCountOld(tag: Tags, includeEventsTags:boolean = false, includeWildcardTags:boolean = true): number {
     if (this.tagsForTest !== undefined) {
-      return this.tagsForTest[tag] || 0;
+      let count = this.tagsForTest[tag] ?? 0;
+      if (tag !== Tags.WILDCARD && includeWildcardTags === true) {
+        count += this.tagsForTest[Tags.WILDCARD] ?? 0;
+      }
+      return count;
+    } else {
+      return super.getTagCountOld(tag, includeEventsTags, includeWildcardTags);
     }
-    return super.getTagCount(tag, includeEventsTags, includeWildcardTags);
   }
 
   public runInput(input: ReadonlyArray<ReadonlyArray<string>>, pi: PlayerInput): void {
@@ -81,4 +108,6 @@ export interface TagsForTest {
   wild: number;
   moon: number;
   event: number;
+  mars: number;
+  clone: number;
 }

@@ -17,6 +17,7 @@ export class RoverDriversUnion extends Card implements IProjectCard {
       tags: [Tags.MOON],
       cost: 16,
       requirements: CardRequirements.builder((b) => b.logisticRate(2)),
+      tr: {moonLogistics: 1},
 
       metadata: {
         description: 'Requires 2 Logistic Rate. Raise the Logistic Rate 1 step. Increase your M€ production 1 step per Logistic Rate.',
@@ -32,7 +33,7 @@ export class RoverDriversUnion extends Card implements IProjectCard {
   public play(player: Player) {
     MoonExpansion.ifMoon(player.game, (moonData) => {
       MoonExpansion.raiseLogisticRate(player);
-      player.addProduction(Resources.MEGACREDITS, moonData.logisticRate);
+      player.addProduction(Resources.MEGACREDITS, moonData.logisticRate, {log: true});
     });
     return undefined;
   }

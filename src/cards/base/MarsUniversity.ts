@@ -9,6 +9,7 @@ import {SelectOption} from '../../inputs/SelectOption';
 import {CardName} from '../../CardName';
 import {DeferredAction} from '../../deferredActions/DeferredAction';
 import {CardRenderer} from '../render/CardRenderer';
+import {played} from '../Options';
 
 export class MarsUniversity extends Card implements IProjectCard {
   constructor() {
@@ -17,15 +18,15 @@ export class MarsUniversity extends Card implements IProjectCard {
       name: CardName.MARS_UNIVERSITY,
       tags: [Tags.SCIENCE, Tags.BUILDING],
       cost: 8,
+      victoryPoints: 1,
 
       metadata: {
         cardNumber: '073',
         renderData: CardRenderer.builder((b) => {
           b.effect('When you play a Science tag, including this, you may discard a card from hand to draw a card.', (eb) => {
-            eb.science().played.startEffect.minus().cards(1).nbsp.plus().cards(1);
+            eb.science(1, {played}).startEffect.minus().cards(1).nbsp.plus().cards(1);
           });
         }),
-        victoryPoints: 1,
       },
     });
   }
@@ -60,8 +61,5 @@ export class MarsUniversity extends Card implements IProjectCard {
   }
   public play() {
     return undefined;
-  }
-  public getVictoryPoints() {
-    return 1;
   }
 }

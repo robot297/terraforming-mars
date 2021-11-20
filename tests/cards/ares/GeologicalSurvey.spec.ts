@@ -8,7 +8,7 @@ import {Player} from '../../../src/Player';
 import {SpaceBonus} from '../../../src/SpaceBonus';
 import {SpaceType} from '../../../src/SpaceType';
 import {TileType} from '../../../src/TileType';
-import {AresTestHelper, ARES_OPTIONS_NO_HAZARDS} from '../../ares/AresTestHelper';
+import {ARES_OPTIONS_NO_HAZARDS} from '../../ares/AresTestHelper';
 import {EmptyBoard} from '../../ares/EmptyBoard';
 import {MarsFirst} from '../../../src/turmoil/parties/MarsFirst';
 import {TestingUtils} from '../../TestingUtils';
@@ -30,23 +30,23 @@ describe('GeologicalSurvey', () => {
   });
 
   it('Can play', () => {
-    AresTestHelper.addGreenery(player);
-    expect(card.canPlay(player)).is.true;
+    TestingUtils.addGreenery(player);
+    expect(player.canPlayIgnoringCost(card)).is.true;
 
-    AresTestHelper.addGreenery(player);
-    expect(card.canPlay(player)).is.true;
+    TestingUtils.addGreenery(player);
+    expect(player.canPlayIgnoringCost(card)).is.true;
 
-    AresTestHelper.addGreenery(player);
-    expect(card.canPlay(player)).is.true;
+    TestingUtils.addGreenery(player);
+    expect(player.canPlayIgnoringCost(card)).is.true;
 
-    AresTestHelper.addGreenery(player);
-    expect(card.canPlay(player)).is.true;
+    TestingUtils.addGreenery(player);
+    expect(player.canPlayIgnoringCost(card)).is.true;
 
-    AresTestHelper.addGreenery(player);
-    expect(card.canPlay(player)).is.true;
+    TestingUtils.addGreenery(player);
+    expect(player.canPlayIgnoringCost(card)).is.true;
 
-    AresTestHelper.addGreenery(player);
-    expect(card.canPlay(player)).is.false;
+    TestingUtils.addGreenery(player);
+    expect(player.canPlayIgnoringCost(card)).is.false;
   });
 
 

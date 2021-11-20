@@ -16,11 +16,12 @@ import {IAresData} from './ares/IAresData';
 import {LogMessage} from './LogMessage';
 import {SerializedBoard} from './boards/SerializedBoard';
 import {SerializedMoonData} from './moon/SerializedMoonData';
+import {SerializedPathfindersData} from './pathfinders/SerializedPathfindersData';
 
 export interface SerializedGame {
     activePlayer: PlayerId;
     aresData?: IAresData;
-    awards: Array<IAward>;
+    awards: Array<IAward> | Array<string>; // TODO(bafolts): remove Array<IAward> by 2021-12-01
     board: SerializedBoard;
     claimedMilestones: Array<SerializedClaimedMilestone>;
     clonedGamedId?: string;
@@ -40,9 +41,10 @@ export interface SerializedGame {
     id: GameId;
     initialDraftIteration: number;
     lastSaveId: number;
-    milestones: Array<IMilestone>;
+    milestones: Array<IMilestone> | Array<string>; // TODO(bafolts): remove Array<IMilestone> by 2021-12-01
     monsInsuranceOwner: PlayerId | undefined;
     moonData: SerializedMoonData | undefined;
+    pathfindersData: SerializedPathfindersData | undefined;
     oxygenLevel: number;
     passedPlayers: Array<PlayerId>;
     phase: Phase;

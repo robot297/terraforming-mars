@@ -42,6 +42,10 @@ export class PostgreSQL implements IDatabase {
     });
   }
 
+  async initialize(): Promise<void> {
+
+  }
+
   getClonableGames(cb: (err: Error | undefined, allGames: Array<IGameData>) => void) {
     const allGames: Array<IGameData> = [];
     const sql = 'SELECT distinct game_id game_id, players players FROM games WHERE save_id = 0 order by game_id asc';
@@ -95,8 +99,9 @@ export class PostgreSQL implements IDatabase {
         const json = JSON.parse(res.rows[0].game);
         return cb(undefined, json);
       } catch (exception) {
-        console.error(`Unable to restore game ${game_id}`, exception);
-        cb(exception, undefined);
+        const error = exception instanceof Error ? exception : new Error(String(exception));
+        console.error(`Unable to restore game ${game_id}`, error);
+        cb(error, undefined);
         return;
       }
     });
@@ -205,13 +210,14 @@ export class PostgreSQL implements IDatabase {
         const json = JSON.parse(res.rows[0].game);
         const game = Game.deserialize(json);
         cb(undefined, game);
-      } catch (err) {
-        cb(err, undefined);
+      } catch (e) {
+        const error = e instanceof Error ? e : new Error(String(e));
+        cb(error, undefined);
       }
     });
   }
 
-  saveGame(game: Game): void {
+  saveGame(game: Game): Promise<void> {
     const gameJSON = game.toJSON();
     this.client.query(
       'INSERT INTO games (game_id, save_id, game, players) VALUES ($1, $2, $3, $4) ON CONFLICT (game_id, save_id) DO UPDATE SET game = $3',
@@ -225,6 +231,7 @@ export class PostgreSQL implements IDatabase {
 
     // This must occur after the save.
     game.lastSaveId++;
+    return Promise.resolve();
   }
 
   deleteGameNbrSaves(game_id: GameId, rollbackCount: number): void {

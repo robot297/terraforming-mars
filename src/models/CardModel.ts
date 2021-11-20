@@ -5,6 +5,7 @@ import {Units} from '../Units';
 import {CardName} from '../CardName';
 import {Resources} from '../Resources';
 import {CardDiscount} from '../cards/ICard';
+import {Tags} from '../cards/Tags';
 
 export interface CardModel {
     name: CardName;
@@ -16,5 +17,6 @@ export interface CardModel {
     isDisabled: boolean;
     warning?: string | Message;
     reserveUnits: Readonly<Units>;
-    bonusResource?: Resources | undefined;
+    bonusResource?: Array<Resources>;
+    cloneTag?: Tags; // Used with Pathfinders
 }

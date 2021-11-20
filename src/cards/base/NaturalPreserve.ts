@@ -9,22 +9,22 @@ import {SelectSpace} from '../../inputs/SelectSpace';
 import {Resources} from '../../Resources';
 import {CardName} from '../../CardName';
 import {IAdjacencyBonus} from '../../ares/IAdjacencyBonus';
-import {CardMetadata} from '../CardMetadata';
 import {CardRequirements} from '../CardRequirements';
 import {CardRenderer} from '../render/CardRenderer';
 import {Units} from '../../Units';
+import {nextToNoOtherTileFn} from '../../boards/Board';
+import {max} from '../Options';
 
 export class NaturalPreserve extends Card implements IProjectCard {
   constructor(
     name: CardName = CardName.NATURAL_PRESERVE,
     adjacencyBonus: IAdjacencyBonus | undefined = undefined,
-    metadata: CardMetadata = {
+    metadata = {
       cardNumber: '044',
       renderData: CardRenderer.builder((b) => {
         b.production((pb) => pb.megacredits(1)).nbsp.tile(TileType.NATURAL_PRESERVE, true).asterix();
       }),
       description: 'Oxygen must be 4% or less. Place this tile NEXT TO NO OTHER TILE. Increase your M€ production 1 step.',
-      victoryPoints: 1,
     }) {
     super({
       cardType: CardType.AUTOMATED,
@@ -33,16 +33,17 @@ export class NaturalPreserve extends Card implements IProjectCard {
       cost: 9,
       productionBox: Units.of({megacredits: 1}),
       adjacencyBonus,
-      requirements: CardRequirements.builder((b) => b.oxygen(4).max()),
+      requirements: CardRequirements.builder((b) => b.oxygen(4, {max})),
+      victoryPoints: 1,
       metadata,
     });
   }
   private getAvailableSpaces(player: Player): Array<ISpace> {
     return player.game.board.getAvailableSpacesOnLand(player)
-      .filter((space) => player.game.board.getAdjacentSpaces(space).some((adjacentSpace) => adjacentSpace.tile !== undefined) === false);
+      .filter(nextToNoOtherTileFn(player.game.board));
   }
   public canPlay(player: Player): boolean {
-    return super.canPlay(player) && this.getAvailableSpaces(player).length > 0;
+    return this.getAvailableSpaces(player).length > 0;
   }
   public play(player: Player) {
     return new SelectSpace('Select space for special tile next to no other tile', this.getAvailableSpaces(player), (foundSpace: ISpace) => {
@@ -51,8 +52,5 @@ export class NaturalPreserve extends Card implements IProjectCard {
       player.addProduction(Resources.MEGACREDITS, 1);
       return undefined;
     });
-  }
-  public getVictoryPoints() {
-    return 1;
   }
 }

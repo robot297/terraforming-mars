@@ -5,14 +5,13 @@ import {Player} from '../../Player';
 import {ResourceType} from '../../ResourceType';
 import {OrOptions} from '../../inputs/OrOptions';
 import {SelectOption} from '../../inputs/SelectOption';
-import {MAX_VENUS_SCALE, REDS_RULING_POLICY_COST} from '../../constants';
+import {MAX_VENUS_SCALE} from '../../constants';
 import {CardName} from '../../CardName';
-import {PartyHooks} from '../../turmoil/parties/PartyHooks';
-import {PartyName} from '../../turmoil/parties/PartyName';
 import {SelectHowToPayDeferred} from '../../deferredActions/SelectHowToPayDeferred';
 import {CardRequirements} from '../CardRequirements';
 import {CardRenderer} from '../render/CardRenderer';
 import {Card} from '../Card';
+import {max} from '../Options';
 
 export class RotatorImpacts extends Card implements IActionCard, IResourceCard {
   constructor() {
@@ -23,12 +22,12 @@ export class RotatorImpacts extends Card implements IActionCard, IResourceCard {
       cost: 6,
       resourceType: ResourceType.ASTEROID,
 
-      requirements: CardRequirements.builder((b) => b.venus(14).max()),
+      requirements: CardRequirements.builder((b) => b.venus(14, {max})),
       metadata: {
         cardNumber: '243',
         renderData: CardRenderer.builder((b) => {
           b.action('Spend 6 M€ to add an asteroid resource to this card [TITANIUM MAY BE USED].', (eb) => {
-            eb.megacredits(6).titanium(1).brackets.startAction.asteroids(1);
+            eb.megacredits(6).openBrackets.titanium(1).closeBrackets.startAction.asteroids(1);
           }).br;
           b.action('Spend 1 resource from this card to increase Venus 1 step.', (eb) => {
             eb.or().asteroids(1).startAction.venus(1);
@@ -48,11 +47,7 @@ export class RotatorImpacts extends Card implements IActionCard, IResourceCard {
     const venusMaxed = player.game.getVenusScaleLevel() === MAX_VENUS_SCALE;
     const canSpendResource = this.resourceCount > 0 && !venusMaxed;
 
-    if (PartyHooks.shouldApplyPolicy(player.game, PartyName.REDS) && !venusMaxed) {
-      return player.canAfford(6, {titanium: true}) || (canSpendResource && player.canAfford(REDS_RULING_POLICY_COST));
-    }
-
-    return player.canAfford(6, {titanium: true}) || canSpendResource;
+    return player.canAfford(6, {titanium: true}) || (canSpendResource && player.canAfford(0, {tr: {venus: 1}}));
   }
 
   public action(player: Player) {

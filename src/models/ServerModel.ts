@@ -6,13 +6,14 @@ import {SimpleGameModel} from './SimpleGameModel';
 import {GameOptionsModel} from './GameOptionsModel';
 import {ICard} from '../cards/ICard';
 import {IProjectCard} from '../cards/IProjectCard';
+import {isICloneTagCard} from '../cards/pathfinders/ICloneTagCard';
 import {Board} from '../boards/Board';
 import {ISpace} from '../boards/ISpace';
 import {Player} from '../Player';
 import {PlayerInput} from '../PlayerInput';
 import {PlayerInputModel} from './PlayerInputModel';
 import {PlayerInputTypes} from '../PlayerInputTypes';
-import {PlayerModel} from './PlayerModel';
+import {PlayerViewModel, PublicPlayerModel} from './PlayerModel';
 import {SelectAmount} from '../inputs/SelectAmount';
 import {SelectCard} from '../inputs/SelectCard';
 import {SelectHowToPay} from '../inputs/SelectHowToPay';
@@ -44,7 +45,7 @@ import {GameModel} from './GameModel';
 import {Turmoil} from '../turmoil/Turmoil';
 
 export class Server {
-  public static getGameModel(game: Game): SimpleGameModel {
+  public static getSimpleGameModel(game: Game): SimpleGameModel {
     return {
       activePlayer: game.getPlayerById(game.activePlayer).color,
       id: game.id,
@@ -54,12 +55,13 @@ export class Server {
         id: player.id,
         name: player.name,
       })),
+      spectatorId: game.spectatorId,
       gameOptions: this.getGameOptionsAsModel(game.gameOptions),
       lastSoloGeneration: game.lastSoloGeneration(),
     };
   }
 
-  public static getCommonGameModel(game: Game): GameModel {
+  public static getGameModel(game: Game): GameModel {
     const turmoil = getTurmoilModel(game);
 
     return {
@@ -85,68 +87,40 @@ export class Server {
       turmoil: turmoil,
       undoCount: game.undoCount,
       venusScaleLevel: game.getVenusScaleLevel(),
+      step: game.lastSaveId,
     };
   }
 
-  public static getPlayerModel(player: Player): PlayerModel {
+  public static getPlayerModel(player: Player): PlayerViewModel {
     const game = player.game;
 
+    const players: Array<PublicPlayerModel> = game.getPlayers().map(this.getPlayer);
+    const thisPlayerIndex: number = players.findIndex((p) => p.color === player.color);
+    const thisPlayer: PublicPlayerModel = players[thisPlayerIndex];
+
     return {
-      actionsTakenThisRound: player.actionsTakenThisRound,
-      actionsThisGeneration: Array.from(player.getActionsThisGeneration()),
-      availableBlueCardActionCount: player.getAvailableBlueActionCount(),
-      cardCost: player.cardCost,
       cardsInHand: this.getCards(player, player.cardsInHand, {showNewCost: true}),
-      cardsInHandNbr: player.cardsInHand.length,
-      citiesCount: player.getCitiesCount(),
-      coloniesCount: player.getColoniesCount(),
-      color: player.color,
-      corporationCard: this.getCorporationCard(player),
-      game: this.getCommonGameModel(player.game),
       dealtCorporationCards: this.getCards(player, player.dealtCorporationCards),
       dealtPreludeCards: this.getCards(player, player.dealtPreludeCards),
       dealtProjectCards: this.getCards(player, player.dealtProjectCards),
       draftedCards: this.getCards(player, player.draftedCards, {showNewCost: true}),
-      energy: player.energy,
-      energyProduction: player.getProduction(Resources.ENERGY),
-      fleetSize: player.getFleetSize(),
-      heat: player.heat,
-      heatProduction: player.getProduction(Resources.HEAT),
+      game: this.getGameModel(player.game),
       id: player.id,
-      influence: Turmoil.ifTurmoilElse(game, (turmoil) => turmoil.getPlayerInfluence(player), () => 0),
-      isActive: player.id === game.activePlayer,
-      megaCredits: player.megaCredits,
-      megaCreditProduction: player.getProduction(Resources.MEGACREDITS),
-      name: player.name,
-      needsToDraft: player.needsToDraft,
-      needsToResearch: !game.hasResearched(player),
-      noTagsCount: player.getNoTagsCount(),
       pickedCorporationCard: player.pickedCorporationCard ? this.getCards(player, [player.pickedCorporationCard]) : [],
-      plants: player.plants,
-      plantProduction: player.getProduction(Resources.PLANTS),
-      plantsAreProtected: player.plantsAreProtected(),
-      playedCards: this.getCards(player, player.playedCards, {showResources: true}),
-      players: this.getPlayers(game.getPlayers(), game),
       preludeCardsInHand: this.getCards(player, player.preludeCardsInHand),
-      selfReplicatingRobotsCards: this.getSelfReplicatingRobotsTargetCards(player),
-      steel: player.steel,
-      steelProduction: player.getProduction(Resources.STEEL),
-      steelValue: player.getSteelValue(),
-      tags: player.getAllTags(),
-      terraformRating: player.getTerraformRating(),
-      timer: player.timer.serialize(),
-      titanium: player.titanium,
-      titaniumProduction: player.getProduction(Resources.TITANIUM),
-      titaniumValue: player.getTitaniumValue(),
-      tradesThisGeneration: player.tradesThisGeneration,
-      victoryPointsBreakdown: player.getVictoryPoints(),
+      thisPlayer: thisPlayer,
       waitingFor: this.getWaitingFor(player, player.getWaitingFor()),
+      players: players,
     };
   }
 
   public static getSpectatorModel(game: Game): SpectatorModel {
     return {
-      generation: game.generation,
+      color: Color.NEUTRAL,
+      id: game.spectatorId ?? '',
+      game: this.getGameModel(game),
+      players: game.getPlayers().map(this.getPlayer),
+      thisPlayer: undefined,
     };
   }
 
@@ -365,7 +339,7 @@ export class Server {
     case PlayerInputTypes.SHIFT_ARES_GLOBAL_PARAMETERS:
       playerInputModel.aresData = (waitingFor as ShiftAresGlobalParameters).aresData;
       break;
-    }
+    };
     return playerInputModel;
   }
 
@@ -390,65 +364,55 @@ export class Server {
       reserveUnits: options.reserveUnits ? options.reserveUnits[index] : Units.EMPTY,
       bonusResource: (card as IProjectCard).bonusResource,
       discount: card.cardDiscount,
+      cloneTag: isICloneTagCard(card) ? card.cloneTag : undefined,
     }));
   }
-  public static getPlayers(players: Array<Player>, game: Game): Array<PlayerModel> {
-    return players.map((player) => {
-      return {
-        actionsTakenThisRound: player.actionsTakenThisRound,
-        actionsThisGeneration: Array.from(player.getActionsThisGeneration()),
-        availableBlueCardActionCount: player.getAvailableBlueActionCount(),
-        cardCost: player.cardCost,
-        cardsInHandNbr: player.cardsInHand.length,
-        citiesCount: player.getCitiesCount(),
-        coloniesCount: player.getColoniesCount(),
-        color: player.color,
-        corporationCard: this.getCorporationCard(player),
-        energy: player.energy,
-        energyProduction: player.getProduction(Resources.ENERGY),
-        fleetSize: player.getFleetSize(),
-        heat: player.heat,
-        heatProduction: player.getProduction(Resources.HEAT),
-        id: game.phase === Phase.END ? player.id : player.color,
-        influence: Turmoil.ifTurmoilElse(game, (turmoil) => turmoil.getPlayerInfluence(player), () => 0),
-        isActive: player.id === game.activePlayer,
-        megaCredits: player.megaCredits,
-        megaCreditProduction: player.getProduction(Resources.MEGACREDITS),
-        name: player.name,
-        needsToDraft: player.needsToDraft,
-        needsToResearch: !game.hasResearched(player),
-        noTagsCount: player.getNoTagsCount(),
-        plants: player.plants,
-        plantProduction: player.getProduction(Resources.PLANTS),
-        plantsAreProtected: player.plantsAreProtected(),
-        playedCards: this.getCards(player, player.playedCards, {showResources: true}),
-        selfReplicatingRobotsCards: this.getSelfReplicatingRobotsTargetCards(player),
-        steel: player.steel,
-        steelProduction: player.getProduction(Resources.STEEL),
-        steelValue: player.getSteelValue(),
-        tags: player.getAllTags(),
-        terraformRating: player.getTerraformRating(),
-        timer: player.timer.serialize(),
-        titanium: player.titanium,
-        titaniumProduction: player.getProduction(Resources.TITANIUM),
-        titaniumValue: player.getTitaniumValue(),
-        tradesThisGeneration: player.tradesThisGeneration,
-        victoryPointsBreakdown: player.getVictoryPoints(),
 
-        // TODO(kberg): Move commonGameData out of this version of getPlayers()
-        game: this.getCommonGameModel(player.game),
-        // Fields that will be removed once this has its own private model.
-        cardsInHand: [],
-        dealtCorporationCards: [],
-        dealtPreludeCards: [],
-        dealtProjectCards: [],
-        draftedCards: [],
-        pickedCorporationCard: [],
-        players: [],
-        preludeCardsInHand: [],
-        waitingFor: undefined,
-      };
-    });
+  public static getPlayer(player: Player): PublicPlayerModel {
+    const game = player.game;
+    return {
+      actionsTakenThisRound: player.actionsTakenThisRound,
+      actionsThisGeneration: Array.from(player.getActionsThisGeneration()),
+      availableBlueCardActionCount: player.getAvailableBlueActionCount(),
+      cardCost: player.cardCost,
+      cardDiscount: player.cardDiscount,
+      cardsInHandNbr: player.cardsInHand.length,
+      citiesCount: player.getCitiesCount(),
+      coloniesCount: player.getColoniesCount(),
+      color: player.color,
+      corporationCard: Server.getCorporationCard(player),
+      energy: player.energy,
+      energyProduction: player.getProduction(Resources.ENERGY),
+      fleetSize: player.getFleetSize(),
+      heat: player.heat,
+      heatProduction: player.getProduction(Resources.HEAT),
+      id: game.phase === Phase.END ? player.id : player.color,
+      influence: Turmoil.ifTurmoilElse(game, (turmoil) => turmoil.getPlayerInfluence(player), () => 0),
+      isActive: player.id === game.activePlayer,
+      lastCardPlayed: player.lastCardPlayed,
+      megaCredits: player.megaCredits,
+      megaCreditProduction: player.getProduction(Resources.MEGACREDITS),
+      name: player.name,
+      needsToDraft: player.needsToDraft,
+      needsToResearch: !game.hasResearched(player),
+      noTagsCount: player.getNoTagsCount(),
+      plants: player.plants,
+      plantProduction: player.getProduction(Resources.PLANTS),
+      plantsAreProtected: player.plantsAreProtected(),
+      playedCards: Server.getCards(player, player.playedCards, {showResources: true}),
+      selfReplicatingRobotsCards: Server.getSelfReplicatingRobotsTargetCards(player),
+      steel: player.steel,
+      steelProduction: player.getProduction(Resources.STEEL),
+      steelValue: player.getSteelValue(),
+      tags: player.getAllTags(),
+      terraformRating: player.getTerraformRating(),
+      timer: player.timer.serialize(),
+      titanium: player.titanium,
+      titaniumProduction: player.getProduction(Resources.TITANIUM),
+      titaniumValue: player.getTitaniumValue(),
+      tradesThisGeneration: player.tradesThisGeneration,
+      victoryPointsBreakdown: player.getVictoryPoints(),
+    };
   }
 
   public static getColonies(game: Game): Array<ColonyModel> {
@@ -509,6 +473,7 @@ export class Server {
 
   public static getGameOptionsAsModel(options: GameOptions): GameOptionsModel {
     return {
+      altVenusBoard: options.altVenusBoard,
       aresExtension: options.aresExtension,
       boardName: options.boardName,
       cardsBlackList: options.cardsBlackList,

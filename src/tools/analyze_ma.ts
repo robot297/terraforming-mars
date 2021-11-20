@@ -116,6 +116,8 @@ function simpleGameOptions(): GameOptions {
     customColoniesList: [],
     requiresVenusTrackCompletion: false, // Venus must be completed to end the game
     requiresMoonTrackCompletion: false, // Moon must be completed to end the game
+    moonStandardProjectVariant: false,
+    altVenusBoard: false,
 
     // The options that can change, should be parameters.
     boardName: BoardName.ORIGINAL,
@@ -123,6 +125,7 @@ function simpleGameOptions(): GameOptions {
     aresExtension: false,
     includeVenusMA: false,
     moonExpansion: false,
+    pathfindersExpansion: false,
     randomMA: RandomMAOptionType.NONE,
   };
 }

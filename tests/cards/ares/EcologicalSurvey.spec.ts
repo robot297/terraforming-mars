@@ -2,7 +2,7 @@ import {EcologicalSurvey} from '../../../src/cards/ares/EcologicalSurvey';
 import {Game} from '../../../src/Game';
 import {Player} from '../../../src/Player';
 import {expect} from 'chai';
-import {ARES_OPTIONS_NO_HAZARDS, AresTestHelper} from '../../ares/AresTestHelper';
+import {ARES_OPTIONS_NO_HAZARDS} from '../../ares/AresTestHelper';
 import {TileType} from '../../../src/TileType';
 import {Ants} from '../../../src/cards/base/Ants';
 import {Pets} from '../../../src/cards/base/Pets';
@@ -30,14 +30,14 @@ describe('EcologicalSurvey', () => {
   });
 
   it('Can play', () => {
-    AresTestHelper.addGreenery(player);
-    expect(card.canPlay(player)).is.false;
+    TestingUtils.addGreenery(player);
+    expect(player.canPlayIgnoringCost(card)).is.false;
 
-    AresTestHelper.addGreenery(player);
-    expect(card.canPlay(player)).is.false;
+    TestingUtils.addGreenery(player);
+    expect(player.canPlayIgnoringCost(card)).is.false;
 
-    AresTestHelper.addGreenery(player);
-    expect(card.canPlay(player)).is.true;
+    TestingUtils.addGreenery(player);
+    expect(player.canPlayIgnoringCost(card)).is.true;
   });
 
   // This doesn't test anything about this card, but about the behavior this card provides, from
