@@ -4,8 +4,6 @@ import {Card} from '../Card';
 import {CardType} from '../CardType';
 import {CardName} from '../../CardName';
 import {CardRenderer} from '../render/CardRenderer';
-import {ResourceType} from '../../ResourceType';
-import {SelectCard} from '../../inputs/SelectCard';
 import {Resources} from '../../Resources';
 import {CardRequirements} from '../CardRequirements';
 import {Tags} from '../Tags';
@@ -41,24 +39,7 @@ export class PrefabricationofHumanHabitats extends Card implements IProjectCard 
     return card.tags.includes(Tags.CITY) ? 2 : 0;
   }
 
-  public canAct(player: Player) {
-    return player.plants > 0 && player.getResourceCards(ResourceType.ANIMAL).length > 0;
-  }
-
-  public action(player: Player) {
-    return new SelectCard(
-      'Select a card to gain an animal resource',
-      'Spend 1 plant',
-      player.getResourceCards(ResourceType.ANIMAL),
-      (cards) => {
-        player.addResource(Resources.PLANTS, -1);
-        player.addResourceTo(cards[0], {log: true});
-        return undefined;
-      });
-  }
-
-  public play(player: Player) {
-    player.game.increaseTemperature(player, 1);
+  public play() {
     return undefined;
   }
 }

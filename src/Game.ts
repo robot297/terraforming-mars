@@ -8,7 +8,6 @@ import {CardType} from './cards/CardType';
 import {ClaimedMilestone, serializeClaimedMilestones, deserializeClaimedMilestones} from './milestones/ClaimedMilestone';
 import {Colony} from './colonies/Colony';
 import {ColonyDealer, loadColoniesFromJSON} from './colonies/ColonyDealer';
-import {ColonyModel} from './models/ColonyModel';
 import {ColonyName} from './colonies/ColonyName';
 import {Color} from './Color';
 import {CorporationCard} from './cards/corporation/CorporationCard';
@@ -121,6 +120,10 @@ export interface GameOptions {
   requiresVenusTrackCompletion: boolean; // Venus must be completed to end the game
   moonStandardProjectVariant: boolean;
   altVenusBoard: boolean;
+  escapeVelocityMode: boolean;
+  escapeVelocityThreshold?: number;
+  escapeVelocityPeriod?: number;
+  escapeVelocityPenalty?: number;
 }
 
 export const DEFAULT_GAME_OPTIONS: GameOptions = {
@@ -136,6 +139,10 @@ export const DEFAULT_GAME_OPTIONS: GameOptions = {
   customColoniesList: [],
   customCorporationsList: [],
   draftVariant: false,
+  escapeVelocityMode: false, // When true, escape velocity is enabled.
+  escapeVelocityThreshold: constants.DEFAULT_ESCAPE_VELOCITY_THRESHOLD, // Time in minutes a player has to complete a game.
+  escapeVelocityPeriod: constants.DEFAULT_ESCAPE_VELOCITY_PERIOD, // VP a player loses for every `escapeVelocityPenalty` minutes after `escapeVelocityThreshold`.
+  escapeVelocityPenalty: constants.DEFAULT_ESCAPE_VELOCITY_PENALTY,
   fastModeOption: false,
   includeVenusMA: true,
   initialDraftVariant: false,
@@ -493,23 +500,6 @@ export class Game implements ISerializable<SerializedGame> {
     this.deferredActions.push(action);
   }
 
-  public getColoniesModel(colonies: Array<Colony>) : Array<ColonyModel> {
-    return colonies.map(
-      (colony): ColonyModel => ({
-        colonies: colony.colonies.map(
-          (playerId): Color => this.getPlayerById(playerId).color,
-        ),
-        isActive: colony.isActive,
-        name: colony.name,
-        trackPosition: colony.trackPosition,
-        visitor:
-              colony.visitor === undefined ?
-                undefined :
-                this.getPlayerById(colony.visitor).color,
-      }),
-    );
-  }
-
   public milestoneClaimed(milestone: IMilestone): boolean {
     return this.claimedMilestones.some(
       (claimedMilestone) => claimedMilestone.milestone.name === milestone.name,
@@ -677,6 +667,8 @@ export class Game implements ISerializable<SerializedGame> {
         if (venusColony) venusColony.isActive = true;
       }
     }
+
+    PathfindersExpansion.onCardPlayed(player, corporationCard);
 
     this.playerIsFinishedWithResearchPhase(player);
   }
@@ -1116,13 +1108,13 @@ export class Game implements ISerializable<SerializedGame> {
     player.takeAction();
   }
 
-  public increaseOxygenLevel(player: Player, increments: -1 | 1 | 2): undefined {
+  public increaseOxygenLevel(player: Player, increments: -2 | -1 | 1 | 2): undefined {
     if (this.oxygenLevel >= constants.MAX_OXYGEN_LEVEL) {
       return undefined;
     }
 
-    // PoliticalAgendas Reds P3 hook
-    if (increments === -1) {
+    // PoliticalAgendas Reds P3 && Magnetic Field Stimulation Delays hook
+    if (increments < 0 ) {
       this.oxygenLevel = Math.max(constants.MIN_OXYGEN_LEVEL, this.oxygenLevel + increments);
       return undefined;
     }
@@ -1307,11 +1299,9 @@ export class Game implements ISerializable<SerializedGame> {
       throw new Error(`Select a valid location: ${space.spaceType} is not ${spaceType}`);
     }
 
-    AresHandler.ifAres(this, () => {
-      if (!AresHandler.canCover(space, tile)) {
-        throw new Error('Selected space is occupied: ' + space.id);
-      }
-    });
+    if (!AresHandler.canCover(space, tile)) {
+      throw new Error('Selected space is occupied: ' + space.id);
+    }
 
     // Oceans are not subject to Ares adjacency production penalties.
     const subjectToHazardAdjacency = tile.tileType !== TileType.OCEAN;
@@ -1349,10 +1339,7 @@ export class Game implements ISerializable<SerializedGame> {
     // Part 5. Collect the bonuses
     if (this.phase !== Phase.SOLAR) {
       if (!coveringExistingTile) {
-        const bonuses = new Multiset(space.bonus);
-        bonuses.entries().forEach(([bonus, count]) => {
-          this.grantSpaceBonus(player, bonus, count);
-        });
+        this.grantSpaceBonuses(player, space);
       }
 
       this.board.getAdjacentSpaces(space).forEach((adjacentSpace) => {
@@ -1388,8 +1375,18 @@ export class Game implements ISerializable<SerializedGame> {
 
   public simpleAddTile(player: Player, space: ISpace, tile: ITile) {
     space.tile = tile;
-    space.player = tile.tileType !== TileType.OCEAN ? player : undefined;
+    space.player = player;
+    if (tile.tileType === TileType.OCEAN || tile.tileType === TileType.MARTIAN_NATURE_WONDERS) {
+      space.player = undefined;
+    }
     LogHelper.logTilePlacement(player, space, tile.tileType);
+  }
+
+  public grantSpaceBonuses(player: Player, space: ISpace) {
+    const bonuses = new Multiset(space.bonus);
+    bonuses.entries().forEach(([bonus, count]) => {
+      this.grantSpaceBonus(player, bonus, count);
+    });
   }
 
   public grantSpaceBonus(player: Player, spaceBonus: SpaceBonus, count: number = 1) {
@@ -1446,12 +1443,17 @@ export class Game implements ISerializable<SerializedGame> {
     });
   }
 
+  public canAddOcean(): boolean {
+    if (this.board.getOceansOnBoard() === constants.MAX_OCEAN_TILES) {
+      return false;
+    }
+    return true;
+  }
   public addOceanTile(
     player: Player, spaceId: SpaceId,
     spaceType: SpaceType = SpaceType.OCEAN): void {
-    if (this.board.getOceansOnBoard() === constants.MAX_OCEAN_TILES) {
-      return;
-    }
+    if (this.canAddOcean() === false) return;
+
     this.addTile(player, spaceType, this.board.getSpace(spaceId), {
       tileType: TileType.OCEAN,
     });

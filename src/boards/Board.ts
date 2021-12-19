@@ -1,7 +1,7 @@
 import {ISpace, SpaceId} from './ISpace';
 import {Player, PlayerId} from '../Player';
 import {SpaceType} from '../SpaceType';
-import {TileType} from '../TileType';
+import {CITY_TILES, OCEAN_TILES, TileType} from '../TileType';
 import {AresHandler} from '../ares/AresHandler';
 import {SerializedBoard, SerializedSpace} from './SerializedBoard';
 
@@ -147,7 +147,15 @@ export abstract class Board {
   }
 
   public getAvailableSpacesForGreenery(player: Player): Array<ISpace> {
-    const spacesForGreenery = this.getAvailableSpacesOnLand(player)
+    let spacesOnLand = this.getAvailableSpacesOnLand(player);
+    // Spaces next to Red City are always unavialable.
+    if (player.game.gameOptions.pathfindersExpansion === true) {
+      spacesOnLand = spacesOnLand.filter((space) => {
+        return !this.getAdjacentSpaces(space).some((neighbor) => neighbor.tile?.tileType === TileType.RED_CITY);
+      });
+    }
+
+    const spacesForGreenery = spacesOnLand
       .filter((space) => this.getAdjacentSpaces(space).find((adj) => adj.tile !== undefined && adj.player === player && adj.tile.tileType !== TileType.OCEAN) !== undefined);
 
     // Spaces next to tiles you own
@@ -155,7 +163,7 @@ export abstract class Board {
       return spacesForGreenery;
     }
     // Place anywhere if no space owned
-    return this.getAvailableSpacesOnLand(player);
+    return spacesOnLand;
   }
 
   public getAvailableSpacesForOcean(player: Player): Array<ISpace> {
@@ -220,13 +228,11 @@ export abstract class Board {
   }
 
   public static isCitySpace(space: ISpace): boolean {
-    const cityTileTypes = [TileType.CITY, TileType.CAPITAL, TileType.OCEAN_CITY];
-    return space.tile !== undefined && cityTileTypes.includes(space.tile.tileType);
+    return space.tile !== undefined && CITY_TILES.has(space.tile.tileType);
   }
 
   public static isOceanSpace(space: ISpace): boolean {
-    const oceanTileTypes = [TileType.OCEAN, TileType.OCEAN_CITY, TileType.OCEAN_FARM, TileType.OCEAN_SANCTUARY];
-    return space.tile !== undefined && oceanTileTypes.includes(space.tile.tileType);
+    return space.tile !== undefined && OCEAN_TILES.has(space.tile.tileType);
   }
 
   public serialize(): SerializedBoard {

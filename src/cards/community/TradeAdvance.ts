@@ -11,6 +11,7 @@ export class TradeAdvance extends PreludeCard implements IProjectCard {
     super({
       name: CardName.TRADE_ADVANCE,
       tags: [Tags.EARTH],
+      startingMegacredits: 2,
 
       metadata: {
         cardNumber: 'Y05',
@@ -30,7 +31,7 @@ export class TradeAdvance extends PreludeCard implements IProjectCard {
       () => {
         const openColonies = player.game.colonies.filter((colony) => colony.isActive);
         openColonies.forEach((colony) => {
-          colony.trade(player, 1, false);
+          colony.trade(player, {usesTradeFleet: false}, 1);
         });
         return undefined;
       },

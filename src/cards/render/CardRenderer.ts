@@ -284,6 +284,10 @@ class Builder {
     return this._appendToRow(new CardRenderItem(CardRenderItemType.CHAIRMAN, -1, options));
   }
 
+  public globalEvent() {
+    return this._appendToRow(new CardRenderItem(CardRenderItemType.GLOBAL_EVENT));
+  }
+
   public noTags() {
     return this._appendToRow(new CardRenderItem(CardRenderItemType.NO_TAGS, -1));
   }
@@ -398,9 +402,14 @@ class Builder {
     return this;
   }
 
+  public planetaryTrack(): Builder {
+    this._appendToRow(new CardRenderItem(CardRenderItemType.PLANETARY_TRACK, 1));
+    return this;
+  }
+
   public specialTile(options?: ItemOptions) {
-    // TODO(kberg): replace with special tile.
-    return this.emptyTile('normal', options);
+    this._appendToRow(new CardRenderItem(CardRenderItemType.EMPTY_TILE_SPECIAL, 1, options));
+    return this;
   }
 
   public emptyTile(type: 'normal' | 'golden' = 'normal', options?: ItemOptions) {

@@ -14,7 +14,7 @@ import {
 } from '../constants';
 
 export class CardRequirements {
-  constructor(private requirements: Array<CardRequirement>) {}
+  constructor(public requirements: Array<CardRequirement>) {}
 
   public static builder(f: (builder: Builder) => void): CardRequirements {
     const builder = new Builder();
@@ -61,7 +61,7 @@ export class CardRequirements {
   }
 }
 
-export type Options = {max?: boolean, all?: boolean};
+export type Options = {max?: boolean, all?: boolean, text?: string};
 
 class Builder {
   private reqs: Array<CardRequirement> = [];

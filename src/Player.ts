@@ -6,7 +6,6 @@ import {Board} from './boards/Board';
 import {CardFinder} from './CardFinder';
 import {CardName} from './CardName';
 import {CardType} from './cards/CardType';
-import {ColonyModel} from './models/ColonyModel';
 import {ColonyName} from './colonies/ColonyName';
 import {Color} from './Color';
 import {CorporationCard} from './cards/corporation/CorporationCard';
@@ -48,7 +47,7 @@ import {SerializedPlayer} from './SerializedPlayer';
 import {SpaceType} from './SpaceType';
 import {StormCraftIncorporated} from './cards/colonies/StormCraftIncorporated';
 import {Tags} from './cards/Tags';
-import {TileType} from './TileType';
+import {CITY_TILES, TileType} from './TileType';
 import {VictoryPointsBreakdown} from './VictoryPointsBreakdown';
 import {SelectProductionToLose} from './inputs/SelectProductionToLose';
 import {IAresGlobalParametersResponse, ShiftAresGlobalParameters} from './inputs/ShiftAresGlobalParameters';
@@ -158,6 +157,9 @@ export class Player implements ISerializable<SerializedPlayer> {
   // removedFromPlayCards is a bit of a misname: it's a temporary storage for
   // cards that provide 'next card' discounts. This will clear between turns.
   public removedFromPlayCards: Array<IProjectCard> = [];
+
+  // Stats
+  public actionsTakenThisGame: number = 0;
 
   constructor(
     public name: string,
@@ -317,7 +319,13 @@ export class Player implements ISerializable<SerializedPlayer> {
     }
   }
 
-  private logUnitDelta(resource: Resources, amount: number, unitType: 'production' | 'amount', from: Player | GlobalEventName | undefined) {
+  private logUnitDelta(
+    resource: Resources,
+    amount: number,
+    unitType: 'production' | 'amount',
+    from: Player | GlobalEventName | undefined,
+    stealing = false,
+  ) {
     if (amount === 0) {
       // Logging zero units doesn't seem to happen
       return;
@@ -329,8 +337,12 @@ export class Player implements ISerializable<SerializedPlayer> {
     let message = '${0}\'s ${1} ' + unitType + ' ${2} by ${3}';
 
     if (from !== undefined) {
+      if (stealing === true) {
+        message = message + ' stolen';
+      }
       message = message + ' by ' + ((from instanceof Player) ? '${4}' : 'Global Event');
     }
+
     this.game.log(message, (b) => {
       b.player(this)
         .string(resource)
@@ -348,6 +360,7 @@ export class Player implements ISerializable<SerializedPlayer> {
     options? : {
       log?: boolean,
       from? : Player | GlobalEventName,
+      stealing?: boolean
     }) {
     this.addResource(resource, -amount, options);
   }
@@ -358,6 +371,7 @@ export class Player implements ISerializable<SerializedPlayer> {
     options? : {
       log?: boolean,
       from? : Player | GlobalEventName,
+      stealing?: boolean
     }) {
     // When amount is negative, sometimes the amount being asked to be removed is more than the player has.
     // delta represents an adjusted amount which basically declares that a player cannot lose more resources
@@ -395,7 +409,7 @@ export class Player implements ISerializable<SerializedPlayer> {
     }
 
     if (options?.log === true) {
-      this.logUnitDelta(resource, delta, 'amount', options.from);
+      this.logUnitDelta(resource, delta, 'amount', options.from, options.stealing);
     }
 
     if (options?.from instanceof Player) {
@@ -409,7 +423,11 @@ export class Player implements ISerializable<SerializedPlayer> {
     }
   }
 
-  public addProduction(resource: Resources, amount : number, options? : { log: boolean, from? : Player | GlobalEventName}) {
+  public addProduction(
+    resource: Resources,
+    amount : number,
+    options? : { log: boolean, from? : Player | GlobalEventName, stealing?: boolean},
+  ) {
     const adj = resource === Resources.MEGACREDITS ? -5 : 0;
     const delta = (amount >= 0) ? amount : Math.max(amount, -(this.getProduction(resource) - adj));
 
@@ -424,7 +442,7 @@ export class Player implements ISerializable<SerializedPlayer> {
     }
 
     if (options?.log === true) {
-      this.logUnitDelta(resource, amount, 'production', options.from);
+      this.logUnitDelta(resource, amount, 'production', options.from, options.stealing);
     }
 
     if (options?.from instanceof Player) {
@@ -513,7 +531,7 @@ export class Player implements ISerializable<SerializedPlayer> {
     return this.actionsThisGeneration;
   }
 
-  public setActionsThisGeneration(cardName: CardName): void {
+  public addActionThisGeneration(cardName: CardName): void {
     this.actionsThisGeneration.add(cardName);
     return;
   }
@@ -581,6 +599,23 @@ export class Player implements ISerializable<SerializedPlayer> {
     MoonExpansion.calculateVictoryPoints(this, victoryPointsBreakdown);
     PathfindersExpansion.calculateVictoryPoints(this, victoryPointsBreakdown);
 
+    // Escape velocity VP penalty
+    if (this.game.gameOptions.escapeVelocityMode) {
+      const threshold = this.game.gameOptions.escapeVelocityThreshold;
+      const period = this.game.gameOptions.escapeVelocityPeriod;
+      const penaltyPerMin = this.game.gameOptions.escapeVelocityPenalty ?? 1;
+      const elapsedTimeInMinutes = this.timer.getElapsedTimeInMinutes();
+      if (threshold !== undefined && period !== undefined && elapsedTimeInMinutes > threshold) {
+        const overTimeInMinutes = Math.max(elapsedTimeInMinutes - threshold - (this.actionsTakenThisGame * (constants.BONUS_SECONDS_PER_ACTION / 60)), 0);
+        // Don't lose more VP than what is available
+        victoryPointsBreakdown.updateTotal();
+
+        const totalBeforeEscapeVelocity = victoryPointsBreakdown.total;
+        const penaltyTotal = Math.min(penaltyPerMin * Math.floor(overTimeInMinutes / period), totalBeforeEscapeVelocity);
+        victoryPointsBreakdown.setVictoryPoints('escapeVelocity', -penaltyTotal, 'Escape Velocity Penalty');
+      }
+    }
+
     victoryPointsBreakdown.updateTotal();
     return victoryPointsBreakdown;
   }
@@ -606,13 +641,9 @@ export class Player implements ISerializable<SerializedPlayer> {
     return this.cardIsInEffect(CardName.PRIVATE_SECURITY);
   }
 
-  // TODO(kberg): counting cities on the board is done in 3 different places, consolidate.
-  // Search for uses of TileType.OCEAN_CITY for reference.
   public getCitiesCount() {
-    const game = this.game;
-    return game.getSpaceCount(TileType.CITY, this) +
-        game.getSpaceCount(TileType.CAPITAL, this) +
-        game.getSpaceCount(TileType.OCEAN_CITY, this);
+    return Array.from(CITY_TILES).map((tileType) => this.game.getSpaceCount(tileType, this))
+      .reduce((previous, current) => previous + current, 0);
   }
 
   // Return the number of cards in the player's hand without tags.
@@ -774,6 +805,7 @@ export class Player implements ISerializable<SerializedPlayer> {
       {tag: Tags.EARTH, count: this.getTagCount(Tags.EARTH, 'raw')},
       {tag: Tags.ENERGY, count: this.getTagCount(Tags.ENERGY, 'raw')},
       {tag: Tags.JOVIAN, count: this.getTagCount(Tags.JOVIAN, 'raw')},
+      {tag: Tags.MARS, count: this.getTagCount(Tags.MARS, 'raw')},
       {tag: Tags.MICROBE, count: this.getTagCount(Tags.MICROBE, 'raw')},
       {tag: Tags.MOON, count: this.getTagCount(Tags.MOON, 'raw')},
       {tag: Tags.PLANT, count: this.getTagCount(Tags.PLANT, 'raw')},
@@ -789,21 +821,50 @@ export class Player implements ISerializable<SerializedPlayer> {
   /*
    * Get the number of tags a player has, depending on certain conditions.
    *
-   * 'raw': count face-up tags literally.
+   * 'raw': count face-up tags literally, including Leavitt Station.
    * 'default': Same as raw, but include the wild tags.
-   * 'ma': Same as raw but includes special conditions for awards & milestones (Chimera)
+   * 'milestone': Same as raw with special conditions for milestones (Chimera)
+   * 'award': Same as raw with special conditions for awards (Chimera)
    * 'vps': Same as raw, but include event tags.
    */
   public getTagCount(tag: Tags, mode: 'default' | 'raw' | 'milestone' | 'award' | 'vps' = 'default') {
-    switch (mode) {
-    case 'default': return this.getTagCountOld(tag, false, true);
-    case 'raw': return this.getTagCountOld(tag, false, false);
-    case 'milestone': return this.getTagCountOld(tag, false, true); // TODO(include Chimera)
-    case 'award': return this.getTagCountOld(tag, false, false); // TODO(include Chimera)
-    case 'vps': return this.getTagCountOld(tag, true, false);
+    const includeEvents = mode === 'vps';
+    const includeTagSubstitutions = (mode === 'default' || mode ==='milestone');
+
+    let tagCount = this.getRawTagCount(tag, includeEvents);
+
+    // Leavitt Station hook
+    if (tag === Tags.SCIENCE && this.scienceTagCount > 0) {
+      tagCount += this.scienceTagCount;
     }
+
+
+    if (includeTagSubstitutions) {
+      // Earth Embassy hook
+      if (tag === Tags.EARTH && this.playedCards.some((c) => c.name === CardName.EARTH_EMBASSY)) {
+        tagCount += this.getRawTagCount(Tags.MOON, includeEvents);
+      }
+      if (tag !== Tags.WILDCARD) {
+        tagCount += this.getRawTagCount(Tags.WILDCARD, includeEvents);
+      }
+    }
+
+    // Chimera hook
+    if (this.corporationCard?.name === CardName.CHIMERA) {
+      // Milestones don't count wild tags, so in this case one will be added.
+      if (mode === 'award') {
+        tagCount++;
+      };
+      // Milestones count wild tags, so in this case one will be deducted.
+      if (mode === 'milestone') {
+        tagCount--;
+      }
+    }
+    return tagCount;
   }
-  protected getTagCountOld(tag: Tags, includeEventsTags:boolean = false, includeTagSubstitutions:boolean = true): number {
+
+  // Counts the tags in the player's play area only.
+  public getRawTagCount(tag: Tags, includeEventsTags: boolean) {
     let tagCount = 0;
 
     this.playedCards.forEach((card: IProjectCard) => {
@@ -816,22 +877,6 @@ export class Player implements ISerializable<SerializedPlayer> {
         (cardTag) => cardTag === tag,
       ).length;
     }
-
-    // Leavitt Station hook
-    if (tag === Tags.SCIENCE && this.scienceTagCount > 0) {
-      tagCount += this.scienceTagCount;
-    }
-
-    if (includeTagSubstitutions) {
-      // Earth Embassy hook
-      if (tag === Tags.EARTH && this.playedCards.some((c) => c.name === CardName.EARTH_EMBASSY)) {
-        tagCount += this.getTagCountOld(Tags.MOON, includeEventsTags, false);
-      }
-      if (tag !== Tags.WILDCARD) {
-        tagCount += this.getTagCountOld(Tags.WILDCARD, includeEventsTags, false);
-      }
-    } else {
-    }
     return tagCount;
   }
 
@@ -840,12 +885,12 @@ export class Player implements ISerializable<SerializedPlayer> {
   public getMultipleTagCount(tags: Array<Tags>): number {
     let tagCount = 0;
     tags.forEach((tag) => {
-      tagCount += this.getTagCount(tag, 'raw');
+      tagCount += this.getRawTagCount(tag, false);
     });
-    return tagCount + this.getTagCount(Tags.WILDCARD);
+    return tagCount + this.getRawTagCount(Tags.WILDCARD, false);
   }
 
-  // TODO(kberg): Describe this function.
+  // Counts the number of distinct tags
   public getDistinctTagCount(countWild: boolean, extraTag?: Tags): number {
     const allTags: Tags[] = [];
     let wildcardCount: number = 0;
@@ -872,9 +917,14 @@ export class Player implements ISerializable<SerializedPlayer> {
       }
     }
     if (countWild) {
+      // TODO(kberg): it might be more correct to count all the tags
+      // in a game regardless of expansion? But if that happens it needs
+      // to be done once, during set-up so that this operation doesn't
+      // always go through every tag every time.
       let maxTagCount = 10;
       if (this.game.gameOptions.venusNextExtension) maxTagCount++;
       if (this.game.gameOptions.moonExpansion) maxTagCount++;
+      if (this.game.gameOptions.pathfindersExpansion) maxTagCount++;
       return Math.min(uniqueTags.size + wildcardCount, maxTagCount);
     } else {
       return uniqueTags.size;
@@ -957,9 +1007,13 @@ export class Player implements ISerializable<SerializedPlayer> {
       this.runInputCb(pi.cb());
     } else if (pi instanceof SelectColony) {
       this.checkInputLength(input, 1, 1);
-      const colony: ColonyName = (input[0][0]) as ColonyName;
-      if (colony === undefined) {
+      const colonyName: ColonyName = (input[0][0]) as ColonyName;
+      if (colonyName === undefined) {
         throw new Error('No colony selected');
+      }
+      const colony = this.game.colonies.find((c) => c.name === colonyName);
+      if (colony === undefined) {
+        throw new Error(`Unknown colony '${colonyName}'`);
       }
       this.runInputCb(pi.cb(colony));
     } else if (pi instanceof OrOptions) {
@@ -1541,6 +1595,8 @@ export class Player implements ISerializable<SerializedPlayer> {
       }
     }
 
+    PathfindersExpansion.onCardPlayed(this, selectedCard);
+
     return undefined;
   }
 
@@ -1587,45 +1643,38 @@ export class Player implements ISerializable<SerializedPlayer> {
 
   private tradeWithColony(openColonies: Array<Colony>): PlayerInput {
     let payWith: Resources | ResourceType | undefined = undefined;
-    const coloniesModel: Array<ColonyModel> = this.game.getColoniesModel(openColonies);
     const titanFloatingLaunchPad = this.playedCards.find((card) => card.name === CardName.TITAN_FLOATING_LAUNCHPAD);
     const mcTradeAmount: number = this.getMcTradeCost();
     const energyTradeAmount: number = this.getEnergyTradeCost();
     const titaniumTradeAmount: number = this.getTitaniumTradeCost();
 
-    const selectColony = new SelectColony('Select colony tile for trade', 'trade', coloniesModel, (colonyName: ColonyName) => {
-      openColonies.forEach((colony) => {
-        if (colony.name === colonyName) {
-          if (payWith === Resources.MEGACREDITS) {
-            this.game.defer(new SelectHowToPayDeferred(
-              this,
-              mcTradeAmount,
-              {
-                title: 'Select how to pay ' + mcTradeAmount + ' for colony trade',
-                afterPay: () => {
-                  this.game.log('${0} spent ${1} M€ to trade with ${2}', (b) => b.player(this).number(mcTradeAmount).colony(colony));
-                  colony.trade(this);
-                },
-              },
-            ));
-          } else if (payWith === Resources.ENERGY) {
-            this.deductResource(Resources.ENERGY, energyTradeAmount);
-            this.game.log('${0} spent ${1} energy to trade with ${2}', (b) => b.player(this).number(energyTradeAmount).colony(colony));
-            colony.trade(this);
-          } else if (payWith === Resources.TITANIUM) {
-            this.deductResource(Resources.TITANIUM, titaniumTradeAmount);
-            this.game.log('${0} spent ${1} titanium to trade with ${2}', (b) => b.player(this).number(titaniumTradeAmount).colony(colony));
-            colony.trade(this);
-          } else if (payWith === ResourceType.FLOATER && titanFloatingLaunchPad !== undefined && titanFloatingLaunchPad.resourceCount) {
-            titanFloatingLaunchPad.resourceCount--;
-            this.actionsThisGeneration.add(titanFloatingLaunchPad.name);
-            this.game.log('${0} spent 1 floater to trade with ${1}', (b) => b.player(this).colony(colony));
-            colony.trade(this);
-          }
-          return undefined;
-        }
-        return undefined;
-      });
+    const selectColony = new SelectColony('Select colony tile for trade', 'trade', openColonies, (colony: Colony) => {
+      if (payWith === Resources.MEGACREDITS) {
+        this.game.defer(new SelectHowToPayDeferred(
+          this,
+          mcTradeAmount,
+          {
+            title: 'Select how to pay ' + mcTradeAmount + ' for colony trade',
+            afterPay: () => {
+              this.game.log('${0} spent ${1} M€ to trade with ${2}', (b) => b.player(this).number(mcTradeAmount).colony(colony));
+              colony.trade(this);
+            },
+          },
+        ));
+      } else if (payWith === Resources.ENERGY) {
+        this.deductResource(Resources.ENERGY, energyTradeAmount);
+        this.game.log('${0} spent ${1} energy to trade with ${2}', (b) => b.player(this).number(energyTradeAmount).colony(colony));
+        colony.trade(this);
+      } else if (payWith === Resources.TITANIUM) {
+        this.deductResource(Resources.TITANIUM, titaniumTradeAmount);
+        this.game.log('${0} spent ${1} titanium to trade with ${2}', (b) => b.player(this).number(titaniumTradeAmount).colony(colony));
+        colony.trade(this);
+      } else if (payWith === ResourceType.FLOATER && titanFloatingLaunchPad !== undefined && titanFloatingLaunchPad.resourceCount) {
+        titanFloatingLaunchPad.resourceCount--;
+        this.actionsThisGeneration.add(titanFloatingLaunchPad.name);
+        this.game.log('${0} spent 1 floater to trade with ${1}', (b) => b.player(this).colony(colony));
+        colony.trade(this);
+      }
       return undefined;
     });
 
@@ -1737,7 +1786,7 @@ export class Player implements ISerializable<SerializedPlayer> {
 
   private endTurnOption(): PlayerInput {
     return new SelectOption('End Turn', 'End', () => {
-      this.actionsTakenThisRound = 1;
+      this.actionsTakenThisRound = 1; // Why is this statement necessary?
       this.game.log('${0} ended turn', (b) => b.player(this));
       return undefined;
     });
@@ -2019,16 +2068,21 @@ export class Player implements ISerializable<SerializedPlayer> {
         this.passOption(),
       );
       this.setWaitingFor(initialActionOrPass, () => {
-        this.actionsTakenThisRound++;
+        this.incrementActionsTaken();
         this.takeAction();
       });
       return;
     }
 
     this.setWaitingFor(this.getActions(), () => {
-      this.actionsTakenThisRound++;
+      this.incrementActionsTaken();
       this.takeAction();
     });
+  }
+
+  private incrementActionsTaken(): void {
+    this.actionsTakenThisRound++;
+    this.actionsTakenThisGame++;
   }
 
   // Return possible mid-game actions like play a card and fund an award, but no play prelude card.
@@ -2264,6 +2318,8 @@ export class Player implements ISerializable<SerializedPlayer> {
       beginner: this.beginner,
       handicap: this.handicap,
       timer: this.timer.serialize(),
+      // Stats
+      actionsTakenThisGame: this.actionsTakenThisGame,
     };
     if (this.lastCardPlayed !== undefined) {
       result.lastCardPlayed = this.lastCardPlayed;
@@ -2275,6 +2331,8 @@ export class Player implements ISerializable<SerializedPlayer> {
     const player = new Player(d.name, d.color, d.beginner, Number(d.handicap), d.id);
     const cardFinder = new CardFinder();
 
+    // TODO: Remove ?? operator after 01-01-2022
+    player.actionsTakenThisGame = d.actionsTakenThisGame ?? 0;
     player.actionsTakenThisRound = d.actionsTakenThisRound;
     player.canUseHeatAsMegaCredits = d.canUseHeatAsMegaCredits;
     player.cardCost = d.cardCost;
