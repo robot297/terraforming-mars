@@ -14,6 +14,7 @@ import {DeferredAction} from '../../deferredActions/DeferredAction';
 import {SelectColony} from '../../inputs/SelectColony';
 import {IColonyTrader} from '../../colonies/IColonyTrader';
 import {Colony} from '../../colonies/Colony';
+import {AddResourcesToCard} from '../../deferredActions/AddResourcesToCard';
 
 function tradeCost(player: Player) {
   return Math.max(0, 3 - player.colonyTradeDiscount);
@@ -46,13 +47,13 @@ export class CollegiumCopernicus extends Card implements CorporationCard, IActio
     });
   }
 
-  public play() {
+  public play(player: Player) {
+    this.addResource(player);
     return undefined;
   }
 
   public initialAction(player: Player) {
     player.drawCard(2, {tag: Tags.SCIENCE});
-    player.addResourceTo(this, {log: true});
     return undefined;
   }
 
@@ -62,8 +63,12 @@ export class CollegiumCopernicus extends Card implements CorporationCard, IActio
 
   public onCardPlayed(player: Player, card: IProjectCard): void {
     if (card.tags.includes(Tags.SCIENCE) && player.isCorporation(this.name)) {
-      player.addResourceTo(this, {log: true});
+      this.addResource(player);
     }
+  }
+
+  private addResource(player: Player) {
+    player.game.defer(new AddResourcesToCard(player, ResourceType.DATA, {count: 1}));
   }
 
   public canAct(player: Player) {
@@ -76,7 +81,7 @@ export class CollegiumCopernicus extends Card implements CorporationCard, IActio
       player,
       () => new SelectColony('Select colony tile to trade with for free', 'Select', ColoniesHandler.tradeableColonies(game), (colony) => {
         this.resourceCount -= tradeCost(player);
-        game.log('${0} spent ${1} to trade with ${2}', (b) => b.player(player).number(tradeCost(player)).colony(colony));
+        game.log('${0} spent ${1} data to trade with ${2}', (b) => b.player(player).number(tradeCost(player)).colony(colony));
         colony.trade(player);
         return undefined;
       }),

@@ -21,7 +21,7 @@ import {SelectHowToPayForProjectCard} from '../inputs/SelectHowToPayForProjectCa
 import {SelectPlayer} from '../inputs/SelectPlayer';
 import {SelectSpace} from '../inputs/SelectSpace';
 import {SpaceHighlight, SpaceModel} from './SpaceModel';
-import {TileType} from '../TileType';
+import {TileType} from '../common/TileType';
 import {Phase} from '../Phase';
 import {Resources} from '../Resources';
 import {CardType} from '../cards/CardType';
@@ -269,6 +269,7 @@ export class Server {
       playerInputModel.floaters = shtpfpc.floaters;
       playerInputModel.canUseHeat = shtpfpc.canUseHeat;
       playerInputModel.science = shtpfpc.scienceResources;
+      playerInputModel.seeds = shtpfpc.seedResources;
       break;
     case PlayerInputTypes.SELECT_CARD:
       const selectCard = waitingFor as SelectCard<ICard>;
@@ -293,6 +294,8 @@ export class Server {
       playerInputModel.canUseSteel = (waitingFor as SelectHowToPay).canUseSteel;
       playerInputModel.canUseTitanium = (waitingFor as SelectHowToPay).canUseTitanium;
       playerInputModel.canUseHeat = (waitingFor as SelectHowToPay).canUseHeat;
+      playerInputModel.canUseSeeds = (waitingFor as SelectHowToPay).canUseSeeds;
+      playerInputModel.seeds = player.getSpendableSeedResources();
       break;
     case PlayerInputTypes.SELECT_PLAYER:
       playerInputModel.players = (waitingFor as SelectPlayer).players.map(

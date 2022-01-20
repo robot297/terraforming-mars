@@ -46,13 +46,12 @@ import {SerializedPlayer} from './SerializedPlayer';
 import {SpaceType} from './SpaceType';
 import {StormCraftIncorporated} from './cards/colonies/StormCraftIncorporated';
 import {Tags} from './cards/Tags';
-import {CITY_TILES, TileType} from './TileType';
+import {CITY_TILES, TileType} from './common/TileType';
 import {VictoryPointsBreakdown} from './VictoryPointsBreakdown';
 import {SelectProductionToLose} from './inputs/SelectProductionToLose';
 import {IAresGlobalParametersResponse, ShiftAresGlobalParameters} from './inputs/ShiftAresGlobalParameters';
 import {Timer} from './Timer';
 import {TurmoilHandler} from './turmoil/TurmoilHandler';
-import {TurmoilPolicy} from './turmoil/TurmoilPolicy';
 import {CardLoader} from './CardLoader';
 import {DrawCards} from './deferredActions/DrawCards';
 import {Units} from './Units';
@@ -147,7 +146,7 @@ export class Player implements ISerializable<SerializedPlayer> {
   // Custom cards
   // Leavitt Station.
   public scienceTagCount: number = 0;
-  // PoliticalAgendas Scientists P4
+  // PoliticalAgendas Scientists P41
   public hasTurmoilScienceTagBonus: boolean = false;
   // Ecoline
   public plantsNeededForGreenery: number = 8;
@@ -219,7 +218,7 @@ export class Player implements ISerializable<SerializedPlayer> {
   }
 
   public getSteelValue(): number {
-    if (PartyHooks.shouldApplyPolicy(this, PartyName.MARS, TurmoilPolicy.MARS_FIRST_POLICY_3)) return this.steelValue + 1;
+    if (PartyHooks.shouldApplyPolicy(this, PartyName.MARS, 'mfp03')) return this.steelValue + 1;
     return this.steelValue;
   }
 
@@ -237,8 +236,8 @@ export class Player implements ISerializable<SerializedPlayer> {
     return this.terraformRating;
   }
 
-  public decreaseTerraformRating() {
-    this.terraformRating--;
+  public decreaseTerraformRating(opts: {log?: boolean} = {}) {
+    this.decreaseTerraformRatingSteps(1, opts);
   }
 
   public increaseTerraformRating(opts: {log?: boolean} = {}) {
@@ -275,8 +274,11 @@ export class Player implements ISerializable<SerializedPlayer> {
     }
   }
 
-  public decreaseTerraformRatingSteps(value: number) {
-    this.terraformRating -= value;
+  public decreaseTerraformRatingSteps(steps: number, opts: {log?: boolean} = {}) {
+    this.terraformRating -= steps;
+    if (opts.log === true) {
+      this.game.log('${0} lost ${1} TR', (b) => b.player(this).number(steps));
+    }
   }
 
   public setTerraformRating(value: number) {
@@ -705,7 +707,7 @@ export class Player implements ISerializable<SerializedPlayer> {
     }
 
     // PoliticalAgendas Scientists P2 hook
-    if (PartyHooks.shouldApplyPolicy(this, PartyName.SCIENTISTS, TurmoilPolicy.SCIENTISTS_POLICY_2)) {
+    if (PartyHooks.shouldApplyPolicy(this, PartyName.SCIENTISTS, 'sp02')) {
       requirementsBonus += 2;
     }
 
@@ -1356,7 +1358,7 @@ export class Player implements ISerializable<SerializedPlayer> {
     });
 
     // PoliticalAgendas Unity P4 hook
-    if (card.tags.includes(Tags.SPACE) && PartyHooks.shouldApplyPolicy(this, PartyName.UNITY, TurmoilPolicy.UNITY_POLICY_4)) {
+    if (card.tags.includes(Tags.SPACE) && PartyHooks.shouldApplyPolicy(this, PartyName.UNITY, 'up04')) {
       cost -= 2;
     }
 
@@ -1381,6 +1383,10 @@ export class Player implements ISerializable<SerializedPlayer> {
 
   private canUseScience(card: ICard): boolean {
     return card.tags.includes(Tags.MOON);
+  }
+
+  private canUseSeeds(card: ICard): boolean {
+    return card.tags.includes(Tags.PLANT) || card.name === CardName.GREENERY_STANDARD_PROJECT;
   }
 
   private playPreludeCard(): PlayerInput {
@@ -1437,6 +1443,10 @@ export class Player implements ISerializable<SerializedPlayer> {
       totalToPay += howToPay.science;
     }
 
+    if (howToPay.seeds ?? 0 > 0) {
+      totalToPay += howToPay.seeds * constants.SEED_VALUE;
+    }
+
     if (howToPay.megaCredits > this.megaCredits) {
       throw new Error('Do not have enough M€');
     }
@@ -1482,6 +1492,13 @@ export class Player implements ISerializable<SerializedPlayer> {
       0;
   }
 
+  public getSpendableSeedResources(): number {
+    if (this.isCorporation(CardName.SOYLENT_SEEDLING_SYSTEMS)) {
+      return this.corporationCard?.resourceCount ?? 0;
+    }
+    return 0;
+  }
+
   public playCard(selectedCard: IProjectCard, howToPay?: HowToPay, addToPlayedCards: boolean = true): undefined {
     // Pay for card
     if (howToPay !== undefined) {
@@ -1501,6 +1518,10 @@ export class Player implements ISerializable<SerializedPlayer> {
 
         if (playedCard.name === CardName.LUNA_ARCHIVES) {
           this.removeResourceFrom(playedCard, howToPay.science);
+        }
+
+        if (this.corporationCard?.name === CardName.SOYLENT_SEEDLING_SYSTEMS) {
+          this.removeResourceFrom(this.corporationCard, howToPay.seeds);
         }
       }
     }
@@ -1799,6 +1820,7 @@ export class Player implements ISerializable<SerializedPlayer> {
         floaters: this.canUseFloaters(card),
         microbes: this.canUseMicrobes(card),
         science: this.canUseScience(card),
+        seeds: this.canUseSeeds(card),
         reserveUnits: MoonExpansion.adjustedReserveCosts(this, card),
         tr: card.tr,
       });
@@ -1827,6 +1849,7 @@ export class Player implements ISerializable<SerializedPlayer> {
     floaters?: boolean,
     microbes?: boolean,
     science?: boolean,
+    seeds?: boolean,
     reserveUnits?: Units,
     tr?: TRSource,
   }) {
@@ -1840,6 +1863,7 @@ export class Player implements ISerializable<SerializedPlayer> {
     const canUseFloaters: boolean = options?.floaters ?? false;
     const canUseMicrobes: boolean = options?.microbes ?? false;
     const canUseScience: boolean = options?.science ?? false;
+    const canUseSeeds: boolean = options?.seeds ?? false;
 
     const redsCost = TurmoilHandler.computeTerraformRatingBump(this, options?.tr) * REDS_RULING_POLICY_COST;
 
@@ -1859,7 +1883,8 @@ export class Player implements ISerializable<SerializedPlayer> {
       (canUseTitanium ? (this.titanium - reserveUnits.titanium) * this.getTitaniumValue() : 0) +
       (canUseFloaters ? this.getFloatersCanSpend() * 3 : 0) +
       (canUseMicrobes ? this.getMicrobesCanSpend() * 2 : 0) +
-      (canUseScience ? this.getSpendableScienceResources() : 0);
+      (canUseScience ? this.getSpendableScienceResources() : 0) +
+      (canUseSeeds ? this.getSpendableSeedResources() * constants.SEED_VALUE : 0);
   }
 
   private getStandardProjects(): Array<StandardProjectCard> {
@@ -2236,8 +2261,7 @@ export class Player implements ISerializable<SerializedPlayer> {
     const player = new Player(d.name, d.color, d.beginner, Number(d.handicap), d.id);
     const cardFinder = new CardFinder();
 
-    // TODO: Remove ?? operator after 01-01-2022
-    player.actionsTakenThisGame = d.actionsTakenThisGame ?? 0;
+    player.actionsTakenThisGame = d.actionsTakenThisGame;
     player.actionsTakenThisRound = d.actionsTakenThisRound;
     player.canUseHeatAsMegaCredits = d.canUseHeatAsMegaCredits;
     player.cardCost = d.cardCost;
@@ -2250,6 +2274,7 @@ export class Player implements ISerializable<SerializedPlayer> {
     player.energyProduction = d.energyProduction;
     player.fleetSize = d.fleetSize;
     player.hasIncreasedTerraformRatingThisGeneration = d.hasIncreasedTerraformRatingThisGeneration;
+    player.hasTurmoilScienceTagBonus = d.hasTurmoilScienceTagBonus;
     player.heat = d.heat;
     player.heatProduction = d.heatProduction;
     player.megaCreditProduction = d.megaCreditProduction;
@@ -2306,25 +2331,12 @@ export class Player implements ISerializable<SerializedPlayer> {
       player.corporationCard = undefined;
     }
 
-    // Rebuild dealt corporation array
     player.dealtCorporationCards = cardFinder.corporationCardsFromJSON(d.dealtCorporationCards);
-
-    // Rebuild dealt prelude array
     player.dealtPreludeCards = cardFinder.cardsFromJSON(d.dealtPreludeCards);
-
-    // Rebuild dealt cards array
     player.dealtProjectCards = cardFinder.cardsFromJSON(d.dealtProjectCards);
-
-    // Rebuild each cards in hand
     player.cardsInHand = cardFinder.cardsFromJSON(d.cardsInHand);
-
-    // Rebuild each prelude in hand
     player.preludeCardsInHand = cardFinder.cardsFromJSON(d.preludeCardsInHand);
-
-    // Rebuild each played card
     player.playedCards = d.playedCards.map((element: SerializedCard) => deserializeProjectCard(element, cardFinder));
-
-    // Rebuild each drafted cards
     player.draftedCards = cardFinder.cardsFromJSON(d.draftedCards);
 
     player.timer = Timer.deserialize(d.timer);

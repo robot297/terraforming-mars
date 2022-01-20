@@ -24,9 +24,9 @@ export class HuygensObservatory extends Card implements IProjectCard {
 
       metadata: {
         cardNumber: 'Pf61',
-        renderData: CardRenderer.builder((b) => b.colonies(1)),
+        renderData: CardRenderer.builder((b) => b.colonies(1).asterix().trade().asterix().tr(1)),
         description: 'Place a colony. MAY BE PLACED ON A COLONY TILE WHERE YOU ALREADY HAVE A COLONY. ' +
-          'Trade for free. You may use a Trade Fleet that you used this generation already, but you many not ' +
+          'Trade for free. You may use a Trade Fleet that you used this generation already, but you may not ' +
           'trade with the tile that fleet came from. Gain 1 TR.',
       },
     });
@@ -93,7 +93,7 @@ export class HuygensObservatory extends Card implements IProjectCard {
       game.defer(new DeferredAction(player, () => orOptions));
     }
   }
-  public canPlay(player: Player): boolean {
+  public override canPlay(player: Player): boolean {
     return player.hasAvailableColonyTileToBuildOn(true) || this.tradeableColonies(player).length > 0;
   }
 
