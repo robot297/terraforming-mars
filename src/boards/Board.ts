@@ -1,7 +1,8 @@
 import {ISpace, SpaceId} from './ISpace';
-import {Player, PlayerId} from '../Player';
+import {Player} from '../Player';
+import {PlayerId} from '../common/Types';
 import {SpaceType} from '../SpaceType';
-import {CITY_TILES, OCEAN_TILES, TileType} from '../common/TileType';
+import {CITY_TILES, OCEAN_TILES, OCEAN_UPGRADE_TILES, TileType} from '../common/TileType';
 import {AresHandler} from '../ares/AresHandler';
 import {SerializedBoard, SerializedSpace} from './SerializedBoard';
 
@@ -111,13 +112,11 @@ export abstract class Board {
   }
 
   public getOceansTiles(countUpgradedOceans: boolean): Array<ISpace> {
+    let spaces = this.spaces.filter((space) => Board.isOceanSpace(space));
     if (!countUpgradedOceans) {
-      return this.spaces.filter((space) => space.tile !== undefined &&
-                      space.tile.tileType === TileType.OCEAN,
-      );
-    } else {
-      return this.spaces.filter((space) => Board.isOceanSpace(space));
+      spaces = spaces.filter((space) => space.tile && !OCEAN_UPGRADE_TILES.has(space.tile?.tileType));
     }
+    return spaces;
   }
 
   public getSpaces(spaceType: SpaceType, _player : Player): Array<ISpace> {
