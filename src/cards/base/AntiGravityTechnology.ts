@@ -1,8 +1,8 @@
 import {IProjectCard} from '../IProjectCard';
-import {Tags} from '../Tags';
+import {Tags} from '../../common/cards/Tags';
 import {Card} from '../Card';
-import {CardType} from '../CardType';
-import {CardName} from '../../CardName';
+import {CardType} from '../../common/cards/CardType';
+import {CardName} from '../../common/cards/CardName';
 import {CardRenderer} from '../render/CardRenderer';
 import {CardRequirements} from '../CardRequirements';
 
@@ -27,9 +27,6 @@ export class AntiGravityTechnology extends Card implements IProjectCard {
     });
   }
 
-  public getCardDiscount() {
-    return 2;
-  }
   public play() {
     return undefined;
   }

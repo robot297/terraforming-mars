@@ -1,9 +1,9 @@
 import {Player} from '../../Player';
 import {PreludeCard} from './PreludeCard';
 import {IProjectCard} from '../IProjectCard';
-import {CardName} from '../../CardName';
+import {CardName} from '../../common/cards/CardName';
 import {CardRenderer} from '../render/CardRenderer';
-import {Units} from '../../Units';
+import {Units} from '../../common/Units';
 
 export class MetalsCompany extends PreludeCard implements IProjectCard {
   constructor() {
@@ -16,7 +16,7 @@ export class MetalsCompany extends PreludeCard implements IProjectCard {
         renderData: CardRenderer.builder((b) => {
           b.production((pb) => pb.megacredits(1).steel(1).titanium(1));
         }),
-        description: 'Increase your MC, steel and titanium production 1 step.',
+        description: 'Increase your M€, steel and titanium production 1 step.',
       },
     });
   }

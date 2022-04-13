@@ -1,13 +1,12 @@
 import {IProjectCard} from '../IProjectCard';
-import {Player} from '../../Player';
 import {Card} from '../Card';
-import {CardType} from '../CardType';
-import {CardName} from '../../CardName';
+import {CardType} from '../../common/cards/CardType';
+import {CardName} from '../../common/cards/CardName';
 import {CardRenderer} from '../render/CardRenderer';
 import {Resources} from '../../common/Resources';
 import {CardRequirements} from '../CardRequirements';
-import {Tags} from '../Tags';
-import {Size} from '../render/Size';
+import {Tags} from '../../common/cards/Tags';
+import {Size} from '../../common/cards/render/Size';
 import {played} from '../Options';
 
 export class PrefabricationofHumanHabitats extends Card implements IProjectCard {
@@ -19,6 +18,8 @@ export class PrefabricationofHumanHabitats extends Card implements IProjectCard 
       tags: [Tags.BUILDING, Tags.CITY],
 
       requirements: CardRequirements.builder((b) => b.production(Resources.STEEL)),
+      cardDiscount: {tag: Tags.CITY, amount: 2},
+
       metadata: {
         cardNumber: 'Pf02',
         renderData: CardRenderer.builder((b) => {
@@ -33,10 +34,6 @@ export class PrefabricationofHumanHabitats extends Card implements IProjectCard 
         description: 'Requires that you have steel production.',
       },
     });
-  }
-
-  public getCardDiscount(_player: Player, card: IProjectCard) {
-    return card.tags.includes(Tags.CITY) ? 2 : 0;
   }
 
   public play() {

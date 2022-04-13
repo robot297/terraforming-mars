@@ -1,12 +1,12 @@
 import {IProjectCard} from '../IProjectCard';
-import {Tags} from '../Tags';
+import {Tags} from '../../common/cards/Tags';
 import {Card} from '../Card';
-import {CardType} from '../CardType';
+import {CardType} from '../../common/cards/CardType';
 import {Player} from '../../Player';
-import {CardName} from '../../CardName';
+import {CardName} from '../../common/cards/CardName';
 import {Resources} from '../../common/Resources';
 import {CardRenderer} from '../render/CardRenderer';
-import {Size} from '../render/Size';
+import {Size} from '../../common/cards/render/Size';
 import {all} from '../Options';
 
 export class Greenhouses extends Card implements IProjectCard {
@@ -27,7 +27,7 @@ export class Greenhouses extends Card implements IProjectCard {
     });
   }
   public play(player: Player) {
-    player.addResource(Resources.PLANTS, player.game.getCitiesCount(player), {log: true});
+    player.addResource(Resources.PLANTS, player.game.getCitiesCount(), {log: true});
     return undefined;
   }
 }

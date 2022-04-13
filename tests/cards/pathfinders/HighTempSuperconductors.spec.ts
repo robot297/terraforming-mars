@@ -8,8 +8,8 @@ import {Reds} from '../../../src/turmoil/parties/Reds';
 import {Kelvinists, KELVINISTS_POLICY_1} from '../../../src/turmoil/parties/Kelvinists';
 import {Turmoil} from '../../../src/turmoil/Turmoil';
 import {TestingUtils} from '../../TestingUtils';
-import {Units} from '../../../src/Units';
-import {Tags} from '../../../src/cards/Tags';
+import {Units} from '../../../src/common/Units';
+import {Tags} from '../../../src/common/cards/Tags';
 import {PowerPlantStandardProject} from '../../../src/cards/base/standardProjects/PowerPlantStandardProject';
 
 describe('HighTempSuperconductors', function() {
@@ -84,8 +84,10 @@ describe('HighTempSuperconductors', function() {
     expect(KELVINISTS_POLICY_1.canAct(player)).is.false;
     player.megaCredits = 10;
     expect(KELVINISTS_POLICY_1.canAct(player)).is.true;
+    expect(KELVINISTS_POLICY_1.description(player)).matches(/10 M/);
 
     player.playedCards.push(card);
+    expect(KELVINISTS_POLICY_1.description(player)).matches(/7 M/);
 
     player.megaCredits = 6;
     expect(KELVINISTS_POLICY_1.canAct(player)).is.false;

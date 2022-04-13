@@ -372,8 +372,8 @@
     "Action: Spend 4 energy to gain 1 titanium and increase oxygen 1 step.": "Acción: gasta 4 de energía para obtener 1 de titanio e incrementar el oxígeno 1 nivel.",
 
     "Earth Office": "Sucursal en la Tierra",
-    "Effect: When you play an Earth card, you pay 3 M€ less for it.": "Efecto: al jugar una carta tipo Tierra, paga 3 M€ menos por ella.",
-    "When you play an Earth card, you pay 3 M€ less for it.": "al jugar una carta tipo Tierra, paga 3 M€ menos por ella.",
+    "Effect: When you play an Earth tag, you pay 3 M€ less for it.": "Efecto: al jugar una carta tipo Tierra, paga 3 M€ menos por ella.",
+    "When you play an Earth tag, you pay 3 M€ less for it.": "al jugar una carta tipo Tierra, paga 3 M€ menos por ella.",
 
     "Acquired Company": "Adquisición de Empresa",
 
@@ -442,7 +442,7 @@
     "Place 1 ocean tile.": "Coloca 1 loseta de océano.",
 
     "Ecological Zone": "Zona Ecológica",
-    "(Effect: When you play an animal or plant tag /including these/, add an animal to this card.)": "Efecto: por cada símbolo de animal o planta (incluyendo los 2 de esta carta) que juegues, añade 1 animal a esta carta.",
+    "(Effect: When you play an animal or plant tag INCLUDING THESE, add an animal to this card.)": "Efecto: por cada símbolo de animal o planta (incluyendo los 2 de esta carta) que juegues, añade 1 animal a esta carta.",
     "(Requires that YOU have a greenery tile. Place this tile adjacent to ANY greenery.)": "Requiere que poseas una loseta de vegetación. Coloca esta loseta ADYACENTE A CUALQUIER LOSETA DE VEGETACIÓN.",
     "1 VP per 2 Animals on this card.": "1 PV por cada 2 animales en esta carta.",
 

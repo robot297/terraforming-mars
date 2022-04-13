@@ -1,11 +1,10 @@
 import {IProjectCard} from '../IProjectCard';
 import {Player} from '../../Player';
 import {Card} from '../Card';
-import {CardType} from '../CardType';
-import {CardName} from '../../CardName';
+import {CardType} from '../../common/cards/CardType';
+import {CardName} from '../../common/cards/CardName';
 import {CardRenderer} from '../render/CardRenderer';
-import {ICard} from '../ICard';
-import {Tags} from '../Tags';
+import {Tags} from '../../common/cards/Tags';
 import {played} from '../Options';
 
 export class TerraformingControlStation extends Card implements IProjectCard {
@@ -17,6 +16,7 @@ export class TerraformingControlStation extends Card implements IProjectCard {
       tags: [Tags.VENUS, Tags.MARS, Tags.SPACE],
       tr: {tr: 2},
 
+      cardDiscount: [{tag: Tags.VENUS, amount: 2}, {tag: Tags.MARS, amount: 2}],
       metadata: {
         cardNumber: 'Pf12',
         renderData: CardRenderer.builder((b) => {
@@ -28,13 +28,6 @@ export class TerraformingControlStation extends Card implements IProjectCard {
         description: 'Raise your TR 2 steps.',
       },
     });
-  }
-
-  public getCardDiscount(_player: Player, card: ICard) {
-    if (card.tags.includes(Tags.VENUS) || card.tags.includes(Tags.MARS)) {
-      return 2;
-    }
-    return 0;
   }
 
   public play(player: Player) {

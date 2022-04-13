@@ -1,6 +1,6 @@
 import {IProjectCard} from '../IProjectCard';
-import {CardName} from '../../CardName';
-import {CardType} from '../CardType';
+import {CardName} from '../../common/cards/CardName';
+import {CardType} from '../../common/cards/CardType';
 import {Player} from '../../Player';
 import {CardRequirements} from '../CardRequirements';
 import {CardRenderer} from '../render/CardRenderer';
@@ -32,7 +32,7 @@ export class OutdoorSports extends Card implements IProjectCard {
 
   public override canPlay(player: Player) {
     const board = player.game.board;
-    const oceans = board.getOceanSpaces(true);
+    const oceans = board.getOceanSpaces( );
     return oceans.some((ocean) => board.getAdjacentSpaces(ocean).some((space) => Board.isCitySpace(space)));
   }
 

@@ -1,16 +1,17 @@
-import {RequirementType} from './RequirementType';
-import {Tags} from './Tags';
-import {PartyName} from '../turmoil/parties/PartyName';
+import {RequirementType} from '../common/cards/RequirementType';
+import {Tags} from '../common/cards/Tags';
+import {ICardRequirement, IPartyCardRequirement, IProductionCardRequirement, ITagCardRequirement} from '../common/cards/ICardRequirement';
+import {PartyName} from '../common/turmoil/PartyName';
 import {Resources} from '../common/Resources';
 import {Player} from '../Player';
 import {ResourceType} from '../common/ResourceType';
 import {TileType} from '../common/TileType';
-import {GlobalParameter} from '../GlobalParameter';
+import {GlobalParameter} from '../common/GlobalParameter';
 import {MoonExpansion} from '../moon/MoonExpansion';
 import {Turmoil} from '../turmoil/Turmoil';
 import {Options} from './CardRequirements';
 
-export class CardRequirement {
+export class CardRequirement implements ICardRequirement {
   public readonly isMax: boolean = false;
   public readonly isAny: boolean = false;
   public readonly text: string | undefined = undefined;
@@ -45,12 +46,7 @@ export class CardRequirement {
       return this.satisfiesInequality(player.getResourceCount(ResourceType.FLOATER));
 
     case RequirementType.GREENERIES:
-      const greeneries = player.game.board.spaces.filter(
-        (space) => space.tile !== undefined &&
-            space.tile.tileType === TileType.GREENERY &&
-            (space.player === player || this.isAny),
-      ).length;
-      return this.satisfiesInequality(greeneries);
+      return this.satisfiesInequality(player.game.getGreeneriesCount(this.isAny ? undefined : player));
 
     case RequirementType.PARTY_LEADERS:
       const turmoil = Turmoil.getTurmoil(player.game);
@@ -105,7 +101,7 @@ export class CardRequirement {
     case RequirementType.TAG:
     case RequirementType.PARTY:
     case RequirementType.PRODUCTION:
-      throw `Use subclass satisfies() for requirement type ${this.type}`;
+      throw new Error(`Use subclass satisfies() for requirement type ${this.type}`);
     }
   }
 
@@ -115,7 +111,7 @@ export class CardRequirement {
 
     switch (parameter) {
     case GlobalParameter.OCEANS:
-      currentLevel = player.game.board.getOceanCount();
+      currentLevel = player.game.board.getOceanCount({upgradedOceans: true, wetlands: true});
       break;
     case GlobalParameter.OXYGEN:
       currentLevel = player.game.getOxygenLevel();
@@ -153,7 +149,7 @@ export class CardRequirement {
   }
 }
 
-export class TagCardRequirement extends CardRequirement {
+export class TagCardRequirement extends CardRequirement implements ITagCardRequirement {
   constructor(public tag: Tags, amount: number, options?: Options) {
     super(RequirementType.TAG, amount, options);
   }
@@ -177,7 +173,7 @@ export class TagCardRequirement extends CardRequirement {
   }
 }
 
-export class ProductionCardRequirement extends CardRequirement {
+export class ProductionCardRequirement extends CardRequirement implements IProductionCardRequirement {
   constructor(public resource: Resources, amount: number, options?: Options) {
     super(RequirementType.PRODUCTION, amount, options);
   }
@@ -186,7 +182,7 @@ export class ProductionCardRequirement extends CardRequirement {
   }
 }
 
-export class PartyCardRequirement extends CardRequirement {
+export class PartyCardRequirement extends CardRequirement implements IPartyCardRequirement {
   constructor(public readonly party: PartyName) {
     super(RequirementType.PARTY);
   }

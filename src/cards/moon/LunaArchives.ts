@@ -1,7 +1,7 @@
-import {CardName} from '../../CardName';
+import {CardName} from '../../common/cards/CardName';
 import {Player} from '../../Player';
-import {CardType} from '../CardType';
-import {Tags} from '../Tags';
+import {CardType} from '../../common/cards/CardType';
+import {Tags} from '../../common/cards/Tags';
 import {CardRenderer} from '../render/CardRenderer';
 import {Card} from '../Card';
 import {ResourceType} from '../../common/ResourceType';
@@ -18,7 +18,7 @@ export class LunaArchives extends Card implements IResourceCard, IActionCard {
       resourceType: ResourceType.SCIENCE,
 
       metadata: {
-        cardNumber: 'M70',
+        cardNumber: 'M69',
         renderData: CardRenderer.builder((b) => {
           b.action('Add 1 science resource here for each Moon tag you have.',
             (ab) => ab.empty().startAction.science().slash().moon());
@@ -28,7 +28,7 @@ export class LunaArchives extends Card implements IResourceCard, IActionCard {
         }),
       },
     });
-  };
+  }
 
   public override resourceCount = 0;
 

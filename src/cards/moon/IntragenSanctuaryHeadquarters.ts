@@ -1,8 +1,8 @@
-import {CardName} from '../../CardName';
+import {CardName} from '../../common/cards/CardName';
 import {Player} from '../../Player';
-import {CardType} from '../CardType';
-import {Tags} from '../Tags';
-import {CorporationCard} from '../corporation/CorporationCard';
+import {CardType} from '../../common/cards/CardType';
+import {Tags} from '../../common/cards/Tags';
+import {ICorporationCard} from '../corporation/ICorporationCard';
 import {CardRenderer} from '../render/CardRenderer';
 import {IProjectCard} from '../IProjectCard';
 import {ICard} from '../ICard';
@@ -11,8 +11,9 @@ import {PlaceMoonColonyTile} from '../../moon/PlaceMoonColonyTile';
 import {Card} from '../Card';
 import {VictoryPoints} from '../ICard';
 import {played} from '../Options';
+import {AltSecondaryTag} from '../../common/cards/render/AltSecondaryTag';
 
-export class IntragenSanctuaryHeadquarters extends Card implements CorporationCard {
+export class IntragenSanctuaryHeadquarters extends Card implements ICorporationCard {
   constructor() {
     super({
       cardType: CardType.CORPORATION,
@@ -25,14 +26,13 @@ export class IntragenSanctuaryHeadquarters extends Card implements CorporationCa
 
       metadata: {
         description: 'You start with 38 M€. ' +
-        'As your first action, place a colony tile on the Moon and raise the Colony Rate 1 step.',
+        'As your first action, place a colony tile on the Moon and raise the Colony Rate 1 step. 1 VP for every 2 animals on this card.',
         cardNumber: '',
         renderData: CardRenderer.builder((b) => {
-          b.megacredits(38).br;
+          b.megacredits(38).moonColony({secondaryTag: AltSecondaryTag.MOON_COLONY_RATE}).br;
           b.effect('When any player plays an animal tag (including this), add 1 animal on this card.', (eb) => {
             eb.animals(1, {played}).startEffect.animals(1);
-          }).br,
-          b.text('1 VP for every 2 animals on this card.').br;
+          }).br;
         }),
       },
     });
@@ -49,9 +49,9 @@ export class IntragenSanctuaryHeadquarters extends Card implements CorporationCa
     // Gains the initial resource from its own tag.
     this.resourceCount = 1;
     return undefined;
-  };
+  }
 
-  public onCorpCardPlayed(player: Player, card: CorporationCard) {
+  public onCorpCardPlayed(player: Player, card: ICorporationCard) {
     return this.onCardPlayed(player, card as ICard as IProjectCard);
   }
 

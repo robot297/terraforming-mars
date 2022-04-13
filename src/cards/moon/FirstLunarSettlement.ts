@@ -1,13 +1,13 @@
-import {CardName} from '../../CardName';
+import {CardName} from '../../common/cards/CardName';
 import {Player} from '../../Player';
-import {Tags} from '../Tags';
+import {Tags} from '../../common/cards/Tags';
 import {PreludeCard} from '../prelude/PreludeCard';
 import {PlaceMoonColonyTile} from '../../moon/PlaceMoonColonyTile';
 import {CardRenderer} from '../render/CardRenderer';
 import {TileType} from '../../common/TileType';
 import {IProjectCard} from '../IProjectCard';
-import {AltSecondaryTag} from '../render/CardRenderItem';
-import {Units} from '../../Units';
+import {AltSecondaryTag} from '../../common/cards/render/AltSecondaryTag';
+import {Units} from '../../common/Units';
 
 export class FirstLunarSettlement extends PreludeCard implements IProjectCard {
   constructor() {

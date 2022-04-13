@@ -26,7 +26,7 @@
             <Card :card="{name: card, resources: getResourcesOnCard(card)}"/>
           </div>
           <div id="log_panel_card" class="cardbox" v-for="globalEventName in globalEventNames" :key="globalEventName">
-            <global-event :globalEvent="getGlobalEvent(globalEventName)" type="prior" :showIcons="false"></global-event>
+            <global-event :globalEvent="getGlobalEventModel(globalEventName)" type="prior" :showIcons="false"></global-event>
           </div>
         </div>
       </div>
@@ -35,26 +35,25 @@
 <script lang="ts">
 
 import Vue from 'vue';
-import {CardType} from '@/cards/CardType';
+import {CardType} from '@/common/cards/CardType';
 import {LogMessage} from '@/common/logs/LogMessage';
 import {LogMessageType} from '@/common/logs/LogMessageType';
 import {LogMessageData} from '@/common/logs/LogMessageData';
 import {LogMessageDataType} from '@/common/logs/LogMessageDataType';
-import {PublicPlayerModel} from '@/models/PlayerModel';
+import {PublicPlayerModel} from '@/common/models/PlayerModel';
 import Card from '@/client/components/card/Card.vue';
-import {CardName} from '@/CardName';
+import {CardName} from '@/common/cards/CardName';
 import {TileType} from '@/common/TileType';
-import {playerColorClass} from '@/utils/utils';
-import {Color} from '@/Color';
+import {playerColorClass} from '@/common/utils/utils';
+import {Color} from '@/common/Color';
 import {SoundManager} from '@/client/utils/SoundManager';
-import {PreferencesManager} from '@/client/utils/PreferencesManager';
-import {GlobalEventName} from '@/turmoil/globalEvents/GlobalEventName';
-import GlobalEvent from '@/client/components/GlobalEvent.vue';
-import {getGlobalEventByName} from '@/turmoil/globalEvents/GlobalEventDealer';
-import {GlobalEventModel} from '@/models/TurmoilModel';
-import {PartyName} from '@/turmoil/parties/PartyName';
+import {getPreferences} from '@/client/utils/PreferencesManager';
+import {GlobalEventName} from '@/common/turmoil/globalEvents/GlobalEventName';
+import GlobalEvent from '@/client/components/turmoil/GlobalEvent.vue';
+import {getGlobalEventModel} from '@/client/turmoil/ClientGlobalEventManifest';
+import {GlobalEventModel} from '@/common/models/TurmoilModel';
 import Button from '@/client/components/common/Button.vue';
-import {Log} from '@/Log';
+import {Log} from '@/common/logs/Log';
 import {getCard} from '@/client/cards/ClientCardManifest';
 
 let logRequest: XMLHttpRequest | undefined;
@@ -281,7 +280,7 @@ export default Vue.extend({
         if (xhr.status === 200) {
           messages.splice(0, messages.length);
           messages.push(...xhr.response);
-          if (PreferencesManager.loadBoolean('enable_sounds') && window.location.search.includes('experimental=1') ) {
+          if (getPreferences().enable_sounds && window.location.search.includes('experimental=1') ) {
             SoundManager.newLog();
           }
           if (generation === this.generation) {
@@ -316,27 +315,14 @@ export default Vue.extend({
     lastGenerationClass(): string {
       return this.lastSoloGeneration === this.generation ? 'last-generation blink-animation' : '';
     },
-    getGlobalEvent(globalEventName: GlobalEventName): GlobalEventModel {
-      const globalEvent = getGlobalEventByName(globalEventName);
-      if (globalEvent) {
-        return {
-          name: globalEvent.name,
-          description: globalEvent.description,
-          revealed: globalEvent.revealedDelegate,
-          current: globalEvent.currentDelegate,
-        };
-      }
-      return {
-        name: globalEventName,
-        description: 'global event not found',
-        revealed: PartyName.GREENS,
-        current: PartyName.GREENS,
-      };
+    getGlobalEventModel(globalEventName: GlobalEventName): GlobalEventModel {
+      return getGlobalEventModel(globalEventName);
     },
     getResourcesOnCard(cardName: CardName) {
       for (const player of this.players) {
         const foundCard = player.playedCards.find((card) => card.name === cardName);
         if (foundCard !== undefined) return foundCard.resources;
+        if (cardName === player.corporationCard?.name) return player.corporationCard.resources;
       }
 
       return undefined;

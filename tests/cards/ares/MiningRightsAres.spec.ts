@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import {Player} from '../../../src/Player';
 import {Game} from '../../../src/Game';
 import {SelectSpace} from '../../../src/inputs/SelectSpace';
-import {SpaceBonus} from '../../../src/SpaceBonus';
+import {SpaceBonus} from '../../../src/common/boards/SpaceBonus';
 import {Resources} from '../../../src/common/Resources';
 import {TileType} from '../../../src/common/TileType';
 import {MiningRightsAres} from '../../../src/cards/ares/MiningRightsAres';
@@ -26,7 +26,10 @@ describe('MiningRightsAres', function() {
 
     const titaniumSpace = action.availableSpaces.find((space) => space.bonus.includes(SpaceBonus.TITANIUM) && space.bonus.includes(SpaceBonus.STEEL) === false);
     expect(titaniumSpace).is.not.undefined;
+
     action.cb(titaniumSpace!);
+    TestingUtils.runAllActions(game);
+
     expect(titaniumSpace!.player).to.eq(player);
     expect(titaniumSpace!.tile && titaniumSpace!.tile!.tileType).to.eq(TileType.MINING_TITANIUM_BONUS);
     expect(player.getProduction(Resources.TITANIUM)).to.eq(1);
@@ -34,7 +37,10 @@ describe('MiningRightsAres', function() {
 
     const steelSpace = action.availableSpaces.find((space) => space.bonus.includes(SpaceBonus.TITANIUM) === false && space.bonus.includes(SpaceBonus.STEEL));
     expect(steelSpace).is.not.undefined;
+
     action.cb(steelSpace!);
+    TestingUtils.runAllActions(game);
+
     expect(steelSpace!.player).to.eq(player);
     expect(steelSpace!.tile && steelSpace!.tile!.tileType).to.eq(TileType.MINING_STEEL_BONUS);
     expect(player.getProduction(Resources.TITANIUM)).to.eq(1);

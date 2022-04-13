@@ -1,16 +1,15 @@
-import {Tags} from '../Tags';
+import {Tags} from '../../common/cards/Tags';
 import {Player} from '../../Player';
-import {CorporationCard} from './../corporation/CorporationCard';
-import {IProjectCard} from '../IProjectCard';
+import {ICorporationCard} from '../corporation/ICorporationCard';
 import {Resources} from '../../common/Resources';
 import {Card} from '../Card';
-import {CardName} from '../../CardName';
-import {CardType} from '../CardType';
+import {CardName} from '../../common/cards/CardName';
+import {CardType} from '../../common/cards/CardType';
 import {CardRenderer} from '../render/CardRenderer';
-import {Units} from '../../Units';
+import {Units} from '../../common/Units';
 import {played} from '../Options';
 
-export class CheungShingMARS extends Card implements CorporationCard {
+export class CheungShingMARS extends Card implements ICorporationCard {
   constructor() {
     super({
       cardType: CardType.CORPORATION,
@@ -34,11 +33,6 @@ export class CheungShingMARS extends Card implements CorporationCard {
         }),
       },
     });
-  }
-
-
-  public getCardDiscount(_player: Player, card: IProjectCard) {
-    return card.tags.filter((tag) => tag === Tags.BUILDING).length * 2;
   }
 
   public play(player: Player) {

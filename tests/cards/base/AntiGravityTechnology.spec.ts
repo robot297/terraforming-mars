@@ -11,7 +11,7 @@ describe('AntiGravityTechnology', function() {
     player = TestPlayers.BLUE.newPlayer();
   });
 
-  it('Can\'t play', function() {
+  it('Cannot play', function() {
     expect(player.canPlayIgnoringCost(card)).is.not.true;
   });
 
@@ -20,8 +20,7 @@ describe('AntiGravityTechnology', function() {
     expect(player.canPlayIgnoringCost(card)).is.true;
 
     card.play();
-    player.victoryPointsBreakdown.setVictoryPoints('victoryPoints', card.getVictoryPoints());
-    expect(player.victoryPointsBreakdown.victoryPoints).to.eq(3);
+    expect(card.getVictoryPoints()).to.eq(3);
     expect(card.getCardDiscount()).to.eq(2);
   });
 });

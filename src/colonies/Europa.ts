@@ -1,19 +1,23 @@
-import {Colony, ShouldIncreaseTrack} from './Colony';
+import {Colony} from './Colony';
 import {Resources} from '../common/Resources';
-import {ColonyName} from './ColonyName';
-import {ColonyBenefit} from './ColonyBenefit';
+import {ColonyName} from '../common/colonies/ColonyName';
+import {ColonyBenefit} from '../common/colonies/ColonyBenefit';
+import {ShouldIncreaseTrack} from '../common/colonies/ShouldIncreaseTrack';
 
 export class Europa extends Colony {
-    public name = ColonyName.EUROPA;
-    public description = 'Production';
-    public buildType = ColonyBenefit.PLACE_OCEAN_TILE;
-    public tradeType = ColonyBenefit.GAIN_PRODUCTION;
-    public override tradeResource = [
-      Resources.MEGACREDITS, Resources.MEGACREDITS,
-      Resources.ENERGY, Resources.ENERGY,
-      Resources.PLANTS, Resources.PLANTS, Resources.PLANTS,
-    ];
-    public colonyBonusType = ColonyBenefit.GAIN_RESOURCES;
-    public override colonyBonusResource = Resources.MEGACREDITS;
-    public override shouldIncreaseTrack = ShouldIncreaseTrack.ASK;
+  constructor() {
+    super({
+      name: ColonyName.EUROPA,
+      buildType: ColonyBenefit.PLACE_OCEAN_TILE,
+      tradeType: ColonyBenefit.GAIN_PRODUCTION,
+      tradeResource: [
+        Resources.MEGACREDITS, Resources.MEGACREDITS,
+        Resources.ENERGY, Resources.ENERGY,
+        Resources.PLANTS, Resources.PLANTS, Resources.PLANTS,
+      ],
+      colonyBonusType: ColonyBenefit.GAIN_RESOURCES,
+      colonyBonusResource: Resources.MEGACREDITS,
+      shouldIncreaseTrack: ShouldIncreaseTrack.ASK,
+    });
+  }
 }

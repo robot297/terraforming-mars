@@ -1,14 +1,14 @@
-import {CardName} from '../../CardName';
-import {Tags} from '../Tags';
+import {CardName} from '../../common/cards/CardName';
+import {Tags} from '../../common/cards/Tags';
 import {PreludeCard} from '../prelude/PreludeCard';
 import {CardRenderer} from '../render/CardRenderer';
 import {PlaceMoonMineTile} from '../../moon/PlaceMoonMineTile';
 import {Player} from '../../Player';
 import {MoonExpansion} from '../../moon/MoonExpansion';
 import {PlaceMoonRoadTile} from '../../moon/PlaceMoonRoadTile';
-import {SpaceType} from '../../SpaceType';
+import {SpaceType} from '../../common/boards/SpaceType';
 import {Resources} from '../../common/Resources';
-import {AltSecondaryTag} from '../render/CardRenderItem';
+import {AltSecondaryTag} from '../../common/cards/render/AltSecondaryTag';
 import {TileType} from '../../common/TileType';
 
 export class MiningComplex extends PreludeCard {
@@ -28,7 +28,7 @@ export class MiningComplex extends PreludeCard {
         ),
       },
     });
-  };
+  }
 
   public tilesBuilt = [TileType.MOON_MINE, TileType.MOON_ROAD];
 

@@ -7,7 +7,7 @@
 <script lang="ts">
 
 import Vue from 'vue';
-import {SpaceBonus} from '@/SpaceBonus';
+import {SpaceBonus} from '@/common/boards/SpaceBonus';
 
 export default Vue.extend({
   name: 'bonus',
@@ -39,6 +39,8 @@ export default Vue.extend({
         ret += 'energy-production';
       } else if (bonus === SpaceBonus.SCIENCE) {
         ret += 'science';
+      } else if (bonus === SpaceBonus.TEMPERATURE) {
+        ret += 'bonustemperature';
       }
       ret += ' board-space-bonus-pos--' + idx.toString();
       return ret;

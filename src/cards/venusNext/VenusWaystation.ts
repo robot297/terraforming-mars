@@ -1,8 +1,6 @@
-import {IProjectCard} from '../IProjectCard';
-import {Tags} from '../Tags';
-import {CardType} from '../CardType';
-import {Player} from '../../Player';
-import {CardName} from '../../CardName';
+import {Tags} from '../../common/cards/Tags';
+import {CardType} from '../../common/cards/CardType';
+import {CardName} from '../../common/cards/CardName';
 import {CardRenderer} from '../render/CardRenderer';
 import {Card} from '../Card';
 import {played} from '../Options';
@@ -26,12 +24,9 @@ export class VenusWaystation extends Card {
         }),
       },
     });
-  };
+  }
 
   public play() {
     return undefined;
-  }
-  public getCardDiscount(_player: Player, card: IProjectCard) {
-    return card.tags.filter((tag) => tag === Tags.VENUS).length * 2;
   }
 }

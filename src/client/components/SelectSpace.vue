@@ -14,11 +14,16 @@
 
 <script lang="ts">
 import Vue from 'vue';
+import {WithRefs} from 'vue-typed-refs';
 import ConfirmDialog from '@/client/components/common/ConfirmDialog.vue';
-import {PlayerInputModel} from '@/models/PlayerInputModel';
-import {PreferencesManager} from '@/client/utils/PreferencesManager';
+import {PlayerInputModel} from '@/common/models/PlayerInputModel';
+import {getPreferences, PreferencesManager} from '@/client/utils/PreferencesManager';
 
-export default Vue.extend({
+type Refs = {
+  confirmation: InstanceType<typeof ConfirmDialog>,
+}
+
+export default (Vue as WithRefs<Refs>).extend({
   name: 'SelectSpace',
   props: {
     playerinput: {
@@ -109,18 +114,18 @@ export default Vue.extend({
       return spaces;
     },
     hideDialog(hide: boolean) {
-      PreferencesManager.save('hide_tile_confirmation', hide);
+      PreferencesManager.INSTANCE.set('hide_tile_confirmation', hide);
     },
     onTileSelected(tile: HTMLElement) {
       this.selectedTile = tile;
       this.disableAvailableSpaceAnimation();
       this.animateSpace(tile, true);
       tile.classList.remove('board-space--available');
-      const hideTileConfirmation = PreferencesManager.loadBoolean('hide_tile_confirmation');
+      const hideTileConfirmation = getPreferences().hide_tile_confirmation;
       if (hideTileConfirmation) {
         this.confirmPlacement();
       } else {
-        (this.$refs['confirmation'] as any).show();
+        this.$refs.confirmation.show();
       }
     },
     saveData() {
@@ -140,7 +145,7 @@ export default Vue.extend({
       const spaceId = tile.getAttribute('data_space_id');
       if (spaceId === null || this.availableSpaces.has(spaceId) === false) {
         continue;
-      };
+      }
 
       tile.onclick = () => this.onTileSelected(tile);
     }

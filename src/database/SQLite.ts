@@ -1,7 +1,7 @@
 import {DbLoadCallback, IDatabase} from './IDatabase';
 import {Game, GameOptions, Score} from '../Game';
 import {GameId} from '../common/Types';
-import {IGameData} from './IDatabase';
+import {IGameData} from '../common/game/IGameData';
 import {SerializedGame} from '../SerializedGame';
 
 import sqlite3 = require('sqlite3');
@@ -74,6 +74,23 @@ export class SQLite implements IDatabase {
     });
   }
 
+  getClonableGameByGameId(gameId: GameId, cb: (err: Error | undefined, gameData: IGameData | undefined) => void) {
+    const sql = 'SELECT players FROM games WHERE save_id = 0 AND game_id = ? LIMIT 1';
+
+    this.db.get(sql, [gameId], (err, row) => {
+      if (err) {
+        cb(err, undefined);
+      } else if (row) {
+        cb(undefined, {
+          gameId,
+          playerCount: row.players,
+        });
+      } else {
+        cb(undefined, undefined);
+      }
+    });
+  }
+
   getGames(cb: (err: Error | undefined, allGames: Array<GameId>) => void) {
     const allGames: Array<GameId> = [];
     const sql: string = 'SELECT distinct game_id game_id FROM games WHERE status = \'running\'';
@@ -129,9 +146,17 @@ export class SQLite implements IDatabase {
   }
 
   // TODO(kberg): throw an error if two game ids exist.
-  getGameId(playerId: string, cb: (err: Error | undefined, gameId?: GameId) => void): void {
-    const sql = 'SELECT game_id from games, json_each(games.game, \'$.players\') e where json_extract(e.value, \'$.id\') = ?';
-    this.db.get(sql, [playerId], (err: Error | null, row: { gameId: any; }) => {
+  getGameId(id: string, cb: (err:Error | undefined, gameId?: GameId) => void): void {
+    let sql = undefined;
+    if (id.charAt(0) === 'p') {
+      sql = 'SELECT game_id from games, json_each(games.game, \'$.players\') e where json_extract(e.value, \'$.id\') = ?';
+    } else if (id.charAt(0) === 's') {
+      sql = 'SELECT game_id from games where json_extract(games.game, \'$.spectatorId\') = ?';
+    } else {
+      throw new Error(`id ${id} is neither a player id or spectator id`);
+    }
+    console.log(sql);
+    this.db.get(sql, [id], (err: Error | null, row: { gameId: any; }) => {
       if (err) {
         return cb(err ?? undefined);
       }
@@ -148,22 +173,34 @@ export class SQLite implements IDatabase {
     });
   }
 
-  cleanSaves(game_id: GameId, save_id: number): void {
-    // Purges isn't used yet
-    this.runQuietly('INSERT into purges (game_id, last_save_id) values (?, ?)', [game_id, save_id]);
-    // DELETE all saves except initial and last one
-    this.db.run('DELETE FROM games WHERE game_id = ? AND save_id < ? AND save_id > 0', [game_id, save_id], function(err: Error | null) {
+  getMaxSaveId(game_id: GameId, cb: DbLoadCallback<number>): void {
+    this.db.get('SELECT MAX(save_id) AS save_id FROM games WHERE game_id = ?', [game_id], (err: Error | null, row: { save_id: number; }) => {
       if (err) {
-        return console.warn(err.message);
+        return cb(err ?? undefined, undefined);
       }
+      cb(undefined, row.save_id);
     });
-    // Flag game as finished
-    this.db.run('UPDATE games SET status = \'finished\' WHERE game_id = ?', [game_id], function(err: Error | null) {
+  }
+
+  cleanSaves(game_id: GameId): void {
+    this.getMaxSaveId(game_id, ((err, save_id) => {
       if (err) {
-        return console.warn(err.message);
+        console.warn('SQLite: cleansaves0:', err.message);
+        return;
       }
-    });
-    this.purgeUnfinishedGames();
+      if (save_id === undefined) throw new Error('saveId is undefined for ' + game_id);
+      // Purges isn't used yet
+      this.runQuietly('INSERT into purges (game_id, last_save_id) values (?, ?)', [game_id, save_id]);
+      // DELETE all saves except initial and last one
+      this.db.run('DELETE FROM games WHERE game_id = ? AND save_id < ? AND save_id > 0', [game_id, save_id], (err) => {
+        if (err) console.warn('SQLite: cleansaves1: ', err.message);
+        // Flag game as finished
+        this.db.run('UPDATE games SET status = \'finished\' WHERE game_id = ?', [game_id], (err) => {
+          if (err) console.warn('SQLite: cleansaves2: ', err.message);
+          this.purgeUnfinishedGames();
+        });
+      });
+    }));
   }
 
   purgeUnfinishedGames(): void {

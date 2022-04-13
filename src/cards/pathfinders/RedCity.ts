@@ -1,16 +1,17 @@
-import {Tags} from '../Tags';
-import {CardType} from '../CardType';
+import {Tags} from '../../common/cards/Tags';
+import {CardType} from '../../common/cards/CardType';
 import {Player} from '../../Player';
 import {Card} from '../Card';
-import {CardName} from '../../CardName';
+import {CardName} from '../../common/cards/CardName';
 import {CardRenderer} from '../render/CardRenderer';
-import {Units} from '../../Units';
+import {Units} from '../../common/Units';
 import {CardRequirements} from '../CardRequirements';
-import {PartyName} from '../../turmoil/parties/PartyName';
+import {PartyName} from '../../common/turmoil/PartyName';
 import {CardRenderDynamicVictoryPoints} from '../render/CardRenderDynamicVictoryPoints';
 import {TileType} from '../../common/TileType';
 import {SelectSpace} from '../../inputs/SelectSpace';
 import {AresHandler} from '../../ares/AresHandler';
+import {Board} from '../../boards/Board';
 
 export class RedCity extends Card {
   constructor() {
@@ -40,9 +41,7 @@ export class RedCity extends Card {
   private availableRedCitySpaces(player: Player) {
     const board = player.game.board;
     const citySpaces = board.getAvailableSpacesForCity(player);
-    return citySpaces.filter((space) => {
-      return !board.getAdjacentSpaces(space).some((neighbor) => neighbor.tile?.tileType === TileType.GREENERY);
-    });
+    return citySpaces.filter((space) => !board.getAdjacentSpaces(space).some(Board.isGreenerySpace));
   }
   public override canPlay(player: Player) {
     return player.canAdjustProduction(this.productionBox) && this.availableRedCitySpaces(player).length > 0;

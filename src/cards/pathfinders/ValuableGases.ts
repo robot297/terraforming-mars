@@ -1,15 +1,15 @@
-import {Tags} from '../Tags';
+import {Tags} from '../../common/cards/Tags';
 import {Player} from '../../Player';
-import {PreludeCard} from './../prelude/PreludeCard';
+import {PreludeCard} from '../prelude/PreludeCard';
 import {IProjectCard} from '../IProjectCard';
-import {CardName} from '../../CardName';
+import {CardName} from '../../common/cards/CardName';
 import {ResourceType} from '../../common/ResourceType';
 import {CardRenderer} from '../render/CardRenderer';
-import {Size} from '../render/Size';
-import {AltSecondaryTag} from '../render/CardRenderItem';
+import {Size} from '../../common/cards/render/Size';
+import {AltSecondaryTag} from '../../common/cards/render/AltSecondaryTag';
 import {Resources} from '../../common/Resources';
 import {digit} from '../Options';
-import {CardType} from '../CardType';
+import {CardType} from '../../common/cards/CardType';
 import {DeferredAction} from '../../deferredActions/DeferredAction';
 import {SelectHowToPayForProjectCard} from '../../inputs/SelectHowToPayForProjectCard';
 
@@ -43,24 +43,23 @@ export class ValuableGases extends PreludeCard implements IProjectCard {
     player.addResource(Resources.MEGACREDITS, 10);
 
     const playableCards = player.cardsInHand.filter((card) => {
-      return card.resourceType === ResourceType.FLOATER && card.cardType === CardType.ACTIVE;
+      return card.resourceType === ResourceType.FLOATER &&
+        card.cardType === CardType.ACTIVE &&
+        player.canPlay(card);
     });
     if (playableCards.length !== 0) {
       player.game.defer(new DeferredAction(player, () => {
         return new SelectHowToPayForProjectCard(
           player,
           playableCards,
-          (selectedCard, howToPay) => player.checkHowToPayAndPlayCard(selectedCard, howToPay));
+          (selectedCard, howToPay) => {
+            player.checkHowToPayAndPlayCard(selectedCard, howToPay);
+            player.addResourceTo(selectedCard, 5);
+            return undefined;
+          });
       }));
     }
 
-    return undefined;
-  }
-  public onCardPlayed(player: Player, card: IProjectCard) {
-    const playedCards = player.playedCards;
-    if (playedCards.length > 1 && playedCards[playedCards.length - 2].name === this.name) {
-      player.addResourceTo(card, 5);
-    }
     return undefined;
   }
 }

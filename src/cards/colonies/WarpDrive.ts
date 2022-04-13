@@ -1,8 +1,7 @@
 import {IProjectCard} from '../IProjectCard';
-import {Tags} from '../Tags';
-import {CardType} from '../CardType';
-import {Player} from '../../Player';
-import {CardName} from '../../CardName';
+import {Tags} from '../../common/cards/Tags';
+import {CardType} from '../../common/cards/CardType';
+import {CardName} from '../../common/cards/CardName';
 import {CardRenderer} from '../render/CardRenderer';
 import {CardRequirements} from '../CardRequirements';
 import {Card} from '../Card';
@@ -29,13 +28,6 @@ export class WarpDrive extends Card implements IProjectCard {
         description: 'Requires 5 Science tags.',
       },
     });
-  }
-
-  public getCardDiscount(_player: Player, card: IProjectCard) {
-    if (card.tags.includes(Tags.SPACE)) {
-      return 4;
-    }
-    return 0;
   }
 
   public play() {

@@ -1,11 +1,11 @@
 import {IProjectCard} from '../IProjectCard';
-import {Tags} from '../Tags';
+import {Tags} from '../../common/cards/Tags';
 import {Card} from '../Card';
-import {CardType} from '../CardType';
+import {CardType} from '../../common/cards/CardType';
 import {Player} from '../../Player';
-import {CardName} from '../../CardName';
+import {CardName} from '../../common/cards/CardName';
 import {CardRenderer} from '../render/CardRenderer';
-import {AltSecondaryTag} from '../render/CardRenderItem';
+import {AltSecondaryTag} from '../../common/cards/render/AltSecondaryTag';
 
 export class CuttingEdgeTechnology extends Card implements IProjectCard {
   constructor() {
@@ -31,7 +31,7 @@ export class CuttingEdgeTechnology extends Card implements IProjectCard {
     return undefined;
   }
 
-  public getCardDiscount(_player: Player, card: IProjectCard) {
+  public override getCardDiscount(_player: Player, card: IProjectCard) {
     if (card.requirements !== undefined) return 2;
     return 0;
   }

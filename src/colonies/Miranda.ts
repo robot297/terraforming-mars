@@ -1,15 +1,18 @@
 import {Colony} from './Colony';
-import {ColonyName} from './ColonyName';
-import {ColonyBenefit} from './ColonyBenefit';
+import {ColonyName} from '../common/colonies/ColonyName';
+import {ColonyBenefit} from '../common/colonies/ColonyBenefit';
 import {ResourceType} from '../common/ResourceType';
 
 export class Miranda extends Colony {
-    public name = ColonyName.MIRANDA;
-    public description = 'Animals';
-    public override isActive = false;
-    public override resourceType = ResourceType.ANIMAL;
-    public buildType = ColonyBenefit.ADD_RESOURCES_TO_CARD;
-    public tradeType = ColonyBenefit.ADD_RESOURCES_TO_CARD;
-    public override tradeQuantity = [0, 1, 1, 2, 2, 3, 3];
-    public colonyBonusType = ColonyBenefit.DRAW_CARDS;
+  public override isActive = false;
+  constructor() {
+    super({
+      name: ColonyName.MIRANDA,
+      resourceType: ResourceType.ANIMAL,
+      buildType: ColonyBenefit.ADD_RESOURCES_TO_CARD,
+      tradeType: ColonyBenefit.ADD_RESOURCES_TO_CARD,
+      tradeQuantity: [0, 1, 1, 2, 2, 3, 3],
+      colonyBonusType: ColonyBenefit.DRAW_CARDS,
+    });
+  }
 }

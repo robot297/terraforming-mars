@@ -1,14 +1,14 @@
 import {IParty} from './IParty';
 import {Party} from './Party';
-import {PartyName} from './PartyName';
+import {PartyName} from '../../common/turmoil/PartyName';
 import {Game} from '../../Game';
 import {Resources} from '../../common/Resources';
 import {Bonus} from '../Bonus';
 import {Policy} from '../Policy';
 import {Player} from '../../Player';
 import {SelectHowToPayDeferred} from '../../deferredActions/SelectHowToPayDeferred';
-import {MAX_TEMPERATURE} from '../../constants';
-import {CardName} from '../../CardName';
+import {MAX_TEMPERATURE} from '../../common/constants';
+import {CardName} from '../../common/cards/CardName';
 
 export class Kelvinists extends Party implements IParty {
   name = PartyName.KELVINISTS;
@@ -27,7 +27,7 @@ class KelvinistsBonus01 implements Bonus {
   }
 
   grant(game: Game) {
-    game.getPlayers().forEach((player) => {
+    game.getPlayersInGenerationOrder().forEach((player) => {
       player.addResource(Resources.MEGACREDITS, this.getScore(player));
     });
   }
@@ -43,7 +43,7 @@ class KelvinistsBonus02 implements Bonus {
   }
 
   grant(game: Game) {
-    game.getPlayers().forEach((player) => {
+    game.getPlayersInGenerationOrder().forEach((player) => {
       player.addResource(Resources.HEAT, this.getScore(player));
     });
   }
@@ -52,10 +52,13 @@ class KelvinistsBonus02 implements Bonus {
 class KelvinistsPolicy01 implements Policy {
   isDefault = true;
   id = 'kp01' as const;
-  description: string = 'Pay 10 M€ to increase your Energy and Heat production 1 step (Turmoil Kelvinists)';
+  description(player: Player | undefined): string {
+    const cost = player === undefined ? 10 : this.cost(player);
+    return `Pay ${cost} M€ to increase your Energy and Heat production 1 step (Turmoil Kelvinists)`;
+  }
 
   cost(player: Player): number {
-    return player.playedCards.some((card) => card.name === CardName.HIGH_TEMP_SUPERCONDUCTORS) ? 7: 10;
+    return player.cardIsInEffect(CardName.HIGH_TEMP_SUPERCONDUCTORS) ? 7: 10;
   }
   canAct(player: Player) {
     return player.canAfford(this.cost(player));

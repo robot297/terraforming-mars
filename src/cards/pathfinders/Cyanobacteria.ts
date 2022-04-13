@@ -1,10 +1,10 @@
 import {IProjectCard} from '../IProjectCard';
 import {Player} from '../../Player';
 import {Card} from '../Card';
-import {CardType} from '../CardType';
-import {CardName} from '../../CardName';
+import {CardType} from '../../common/cards/CardType';
+import {CardName} from '../../common/cards/CardName';
 import {CardRenderer} from '../render/CardRenderer';
-import {Tags} from '../Tags';
+import {Tags} from '../../common/cards/Tags';
 import {ResourceType} from '../../common/ResourceType';
 import {AddResourcesToCards} from '../../deferredActions/AddResourcesToCards';
 
@@ -30,7 +30,7 @@ export class Cyanobacteria extends Card implements IProjectCard {
 
   public play(player: Player) {
     player.game.increaseOxygenLevel(player, 1);
-    const microbes = player.game.board.getOceanSpaces(true).length;
+    const microbes = player.game.board.getOceanSpaces({upgradedOceans: true, wetlands: true}).length;
     player.game.defer(new AddResourcesToCards(player, ResourceType.MICROBE, microbes));
     return undefined;
   }

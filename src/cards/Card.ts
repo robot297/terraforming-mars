@@ -1,15 +1,18 @@
-import {ICardMetadata} from './ICardMetadata';
-import {CardName} from '../CardName';
-import {CardType} from './CardType';
+import {ICardMetadata} from '../common/cards/ICardMetadata';
+import {CardName} from '../common/cards/CardName';
+import {CardType} from '../common/cards/CardType';
+import {ICardDiscount} from '../common/cards/Types';
 import {IAdjacencyBonus} from '../ares/IAdjacencyBonus';
 import {ResourceType} from '../common/ResourceType';
-import {Tags} from './Tags';
+import {Tags} from '../common/cards/Tags';
 import {Player} from '../Player';
-import {Units} from '../Units';
+import {Units} from '../common/Units';
 import {CardRequirements} from './CardRequirements';
-import {CardDiscount, TRSource, VictoryPoints} from './ICard';
+import {TRSource} from './ICard';
 import {CardRenderDynamicVictoryPoints} from './render/CardRenderDynamicVictoryPoints';
-import {CardRenderItemType} from './render/CardRenderItemType';
+import {CardRenderItemType} from '../common/cards/render/CardRenderItemType';
+import {IVictoryPoints} from '../common/cards/IVictoryPoints';
+import {IProjectCard} from './IProjectCard';
 
 export interface StaticCardProperties {
   adjacencyBonus?: IAdjacencyBonus;
@@ -24,10 +27,10 @@ export interface StaticCardProperties {
   startingMegaCredits?: number;
   tags?: Array<Tags>;
   productionBox?: Units;
-  cardDiscount?: CardDiscount;
+  cardDiscount?: ICardDiscount | Array<ICardDiscount>;
   reserveUnits?: Units,
   tr?: TRSource,
-  victoryPoints?: number | 'special' | VictoryPoints,
+  victoryPoints?: number | 'special' | IVictoryPoints,
 }
 
 export const staticCardProperties = new Map<CardName, StaticCardProperties>();
@@ -99,7 +102,7 @@ export abstract class Card {
   public get tr(): TRSource {
     return this.properties.tr || {};
   }
-  public get victoryPoints(): number | 'special' | VictoryPoints | undefined {
+  public get victoryPoints(): number | 'special' | IVictoryPoints | undefined {
     return this.properties.victoryPoints;
   }
   public canPlay(_player: Player) {
@@ -130,10 +133,7 @@ export abstract class Card {
       return 0;
     }
 
-    // This will go away.
-    if (!(vps instanceof CardRenderDynamicVictoryPoints)) {
-      return vps;
-    }
+    if (typeof(vps) === 'number') return vps;
 
     if (vps.targetOneOrMore === true || vps.anyPlayer === true) {
       throw new Error('Not yet handled');
@@ -199,5 +199,26 @@ export abstract class Card {
     } else {
       properties.metadata.victoryPoints = CardRenderDynamicVictoryPoints.tag(vps.type, vps.points, vps.per);
     }
+  }
+
+  public getCardDiscount(_player?: Player, card?: IProjectCard): number {
+    if (this.cardDiscount === undefined) {
+      return 0;
+    }
+    let sum = 0;
+    const discounts = Array.isArray(this.cardDiscount) ? this.cardDiscount : [this.cardDiscount];
+    for (const discount of discounts) {
+      if (discount.tag === undefined) {
+        sum += discount.amount;
+      } else {
+        const tags = card?.tags.filter((tag) => tag === discount.tag).length ?? 0;
+        if (discount.per !== 'card') {
+          sum += discount.amount * tags;
+        } else if (tags > 0) {
+          sum += discount.amount;
+        }
+      }
+    }
+    return sum;
   }
 }
