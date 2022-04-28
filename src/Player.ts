@@ -31,7 +31,7 @@ import {SelectAmount} from './inputs/SelectAmount';
 import {SelectCard} from './inputs/SelectCard';
 import {SellPatentsStandardProject} from './cards/base/standardProjects/SellPatentsStandardProject';
 import {SendDelegateToArea} from './deferredActions/SendDelegateToArea';
-import {DeferredAction, Priority} from './deferredActions/DeferredAction';
+import {Priority, SimpleDeferredAction} from './deferredActions/DeferredAction';
 import {SelectHowToPayDeferred} from './deferredActions/SelectHowToPayDeferred';
 import {SelectColony} from './inputs/SelectColony';
 import {SelectPartyToSendDelegate} from './inputs/SelectPartyToSendDelegate';
@@ -74,6 +74,7 @@ import {PathfindersExpansion} from './pathfinders/PathfindersExpansion';
 import {deserializeProjectCard, serializeProjectCard} from './cards/CardSerialization';
 import {ColoniesHandler} from './colonies/ColoniesHandler';
 import {SerializedGame} from './SerializedGame';
+import {MonsInsurance} from './cards/promo/MonsInsurance';
 import {InputResponse} from './common/inputs/InputResponse';
 
 export class Player {
@@ -310,22 +311,6 @@ export class Player {
     throw new Error('Resource ' + resource + ' not found');
   }
 
-  private resolveMonsInsurance() {
-    if (this.game.monsInsuranceOwner !== undefined && this.game.monsInsuranceOwner !== this.id) {
-      const monsInsuranceOwner: Player = this.game.getPlayerById(this.game.monsInsuranceOwner);
-      const retribution: number = Math.min(monsInsuranceOwner.megaCredits, 3);
-      this.megaCredits += retribution;
-      monsInsuranceOwner.deductResource(Resources.MEGACREDITS, 3);
-      if (retribution > 0) {
-        this.game.log('${0} received ${1} M€ from ${2} owner (${3})', (b) =>
-          b.player(this)
-            .number(retribution)
-            .cardName(CardName.MONS_INSURANCE)
-            .player(monsInsuranceOwner));
-      }
-    }
-  }
-
   private logUnitDelta(
     resource: Resources,
     amount: number,
@@ -428,7 +413,7 @@ export class Player {
 
     // Mons Insurance hook
     if (options?.from !== undefined && delta < 0 && (options.from instanceof Player && options.from.id !== this.id)) {
-      this.resolveMonsInsurance();
+      MonsInsurance.resolveInsurance(this);
     }
   }
 
@@ -460,7 +445,7 @@ export class Player {
 
     // Mons Insurance hook
     if (options?.from !== undefined && delta < 0 && (options.from instanceof Player && options.from.id !== this.id)) {
-      this.resolveMonsInsurance();
+      MonsInsurance.resolveInsurance(this);
     }
 
     // Manutech hook
@@ -718,7 +703,7 @@ export class Player {
       if (amountRemoved === 0) return;
       card.resourceCount -= amountRemoved;
 
-      if (removingPlayer !== undefined && removingPlayer !== this) this.resolveMonsInsurance();
+      if (removingPlayer !== undefined && removingPlayer !== this) MonsInsurance.resolveInsurance(this);
 
       this.game.log('${0} removed ${1} resource(s) from ${2}\'s ${3}', (b) =>
         b.player(removingPlayer ?? this)
@@ -822,8 +807,9 @@ export class Player {
    * 'milestone': Same as raw with special conditions for milestones (Chimera)
    * 'award': Same as raw with special conditions for awards (Chimera)
    * 'vps': Same as raw, but include event tags.
+   * 'raw-pf': Same as raw, but includes Mars Tags when tag is Science  (Habitat Marte)
    */
-  public getTagCount(tag: Tags, mode: 'default' | 'raw' | 'milestone' | 'award' | 'vps' = 'default') {
+  public getTagCount(tag: Tags, mode: 'default' | 'raw' | 'milestone' | 'award' | 'vps' | 'raw-pf' = 'default') {
     const includeEvents = mode === 'vps' || this.corporationCard?.name === CardName.ODYSSEY;
     const includeTagSubstitutions = (mode === 'default' || mode === 'milestone');
 
@@ -980,13 +966,11 @@ export class Player {
     return false;
   }
 
-  private runInputCb(result: PlayerInput | undefined): void {
-    if (result !== undefined) {
-      this.defer(result, Priority.DEFAULT);
-    }
+  public deferInputCb(result: PlayerInput | undefined): void {
+    this.defer(result, Priority.DEFAULT);
   }
 
-  private checkInputLength(input: InputResponse, length: number, firstOptionLength?: number) {
+  public checkInputLength(input: InputResponse, length: number, firstOptionLength?: number) {
     if (input.length !== length) {
       throw new Error('Incorrect options provided');
     }
@@ -995,7 +979,7 @@ export class Player {
     }
   }
 
-  private parseHowToPayJSON(json: string): HowToPay {
+  public parseHowToPayJSON(json: string): HowToPay {
     const defaults: HowToPay = {
       steel: 0,
       heat: 0,
@@ -1024,7 +1008,7 @@ export class Player {
       for (let i = 0; i < input.length; i++) {
         this.runInput([input[i]], pi.options[i]);
       }
-      this.runInputCb(pi.cb());
+      this.deferInputCb(pi.cb());
     } else if (pi instanceof SelectAmount) {
       this.checkInputLength(input, 1, 1);
       const amount: number = parseInt(input[0][0]);
@@ -1037,9 +1021,9 @@ export class Player {
       if (amount < pi.min) {
         throw new Error('Amount provided too low (min ' + String(pi.min) + ')');
       }
-      this.runInputCb(pi.cb(amount));
+      this.deferInputCb(pi.cb(amount));
     } else if (pi instanceof SelectOption) {
-      this.runInputCb(pi.cb());
+      this.deferInputCb(pi.cb());
     } else if (pi instanceof SelectColony) {
       this.checkInputLength(input, 1, 1);
       const colonyName: ColonyName = (input[0][0]) as ColonyName;
@@ -1049,7 +1033,7 @@ export class Player {
       // TODO(kberg): this passes true because SelectColony sometimes loads discarded colonies
       // but that can be a parameter, and that would be useful.
       const colony = ColoniesHandler.getColony(this.game, colonyName, true);
-      this.runInputCb(pi.cb(colony));
+      this.deferInputCb(pi.cb(colony));
     } else if (pi instanceof OrOptions) {
       // input length is variable, can't test it with checkInputLength
       if (input.length === 0 || input[0].length !== 1) {
@@ -1058,7 +1042,7 @@ export class Player {
       const optionIndex = parseInt(input[0][0]);
       const selectedOptionInput = input.slice(1);
       this.runInput(selectedOptionInput, pi.options[optionIndex]);
-      this.runInputCb(pi.cb());
+      this.deferInputCb(pi.cb());
     } else if (pi instanceof SelectHowToPayForProjectCard) {
       this.checkInputLength(input, 1, 2);
       const cardName = input[0][0];
@@ -1072,7 +1056,7 @@ export class Player {
       if (reserveUnits.titanium + howToPay.titanium > this.titanium) {
         throw new Error(`${reserveUnits.titanium} units of titanium must be reserved for ${cardName}`);
       }
-      this.runInputCb(pi.cb(foundCard, howToPay));
+      this.deferInputCb(pi.cb(foundCard, howToPay));
     } else if (pi instanceof SelectCard) {
       this.checkInputLength(input, 1);
       if (input[0].length < pi.minCardsToSelect) {
@@ -1089,32 +1073,13 @@ export class Player {
           throw new Error('Selected unavailable card');
         }
       }
-      this.runInputCb(pi.cb(mappedCards));
+      this.deferInputCb(pi.cb(mappedCards));
     } else if (pi instanceof SelectAmount) {
-      this.checkInputLength(input, 1, 1);
-      const amount = parseInt(input[0][0]);
-      if (isNaN(amount)) {
-        throw new Error('Amount is not a number');
-      }
-      this.runInputCb(pi.cb(amount));
+      this.deferInputCb(pi.process(input, this));
     } else if (pi instanceof SelectSpace) {
-      this.checkInputLength(input, 1, 1);
-      const foundSpace = pi.availableSpaces.find(
-        (space) => space.id === input[0][0],
-      );
-      if (foundSpace === undefined) {
-        throw new Error('Space not available');
-      }
-      this.runInputCb(pi.cb(foundSpace));
+      this.deferInputCb(pi.process(input, this));
     } else if (pi instanceof SelectPlayer) {
-      this.checkInputLength(input, 1, 1);
-      const foundPlayer = pi.players.find(
-        (player) => player.color === input[0][0] || player.id === input[0][0],
-      );
-      if (foundPlayer === undefined) {
-        throw new Error('Player not available');
-      }
-      this.runInputCb(pi.cb(foundPlayer));
+      this.deferInputCb(pi.process(input, this));
     } else if (pi instanceof SelectDelegate) {
       this.checkInputLength(input, 1, 1);
       const foundPlayer = pi.players.find((player) =>
@@ -1124,11 +1089,9 @@ export class Player {
       if (foundPlayer === undefined) {
         throw new Error('Player not available');
       }
-      this.runInputCb(pi.cb(foundPlayer));
+      this.deferInputCb(pi.cb(foundPlayer));
     } else if (pi instanceof SelectHowToPay) {
-      this.checkInputLength(input, 1, 1);
-      const howToPay: HowToPay = this.parseHowToPayJSON(input[0][0]);
-      this.runInputCb(pi.cb(howToPay));
+      this.deferInputCb(pi.process(input, this));
     } else if (pi instanceof SelectProductionToLose) {
       // TODO(kberg): I'm sure there's some input validation required.
       const units: Units = JSON.parse(input[0][0]);
@@ -1143,7 +1106,7 @@ export class Player {
       if (party === undefined) {
         throw new Error('No party selected');
       }
-      this.runInputCb(pi.cb(party));
+      this.deferInputCb(pi.cb(party));
     } else {
       throw new Error('Unsupported waitingFor');
     }
@@ -1176,14 +1139,6 @@ export class Player {
   public runProductionPhase(): void {
     this.actionsThisGeneration.clear();
     this.removingPlayers = [];
-    // Syndicate Pirate Raids hook. If it is in effect, then only the syndicate pirate raider will
-    // retrieve their fleets.
-    // See Colony.ts for the other half of this effect, and Game.ts which disables it.
-    if (this.game.syndicatePirateRaider === undefined) {
-      this.tradesThisGeneration = 0;
-    } else if (this.game.syndicatePirateRaider === this.id) {
-      this.tradesThisGeneration = 0;
-    }
 
     this.turmoilPolicyActionUsed = false;
     this.politicalAgendasActionUsedCount = 0;
@@ -1200,6 +1155,16 @@ export class Player {
     }
   }
 
+  public returnTradeFleets(): void {
+    // Syndicate Pirate Raids hook. If it is in effect, then only the syndicate pirate raider will
+    // retrieve their fleets.
+    // See Colony.ts for the other half of this effect, and Game.ts which disables it.
+    if (this.game.syndicatePirateRaider === undefined) {
+      this.tradesThisGeneration = 0;
+    } else if (this.game.syndicatePirateRaider === this.id) {
+      this.tradesThisGeneration = 0;
+    }
+  }
   private doneWorldGovernmentTerraforming(): void {
     this.game.deferredActions.runAll(() => this.game.doneWorldGovernmentTerraforming());
   }
@@ -1624,7 +1589,7 @@ export class Player {
       if (playedCard.onCardPlayed !== undefined) {
         const actionFromPlayedCard: OrOptions | void = playedCard.onCardPlayed(this, card);
         if (actionFromPlayedCard !== undefined) {
-          this.game.defer(new DeferredAction(
+          this.game.defer(new SimpleDeferredAction(
             this,
             () => actionFromPlayedCard,
           ));
@@ -1638,7 +1603,7 @@ export class Player {
       if (somePlayer.corporationCard !== undefined && somePlayer.corporationCard.onCardPlayed !== undefined) {
         const actionFromPlayedCard: OrOptions | void = somePlayer.corporationCard.onCardPlayed(this, card);
         if (actionFromPlayedCard !== undefined) {
-          this.game.defer(new DeferredAction(
+          this.game.defer(new SimpleDeferredAction(
             this,
             () => actionFromPlayedCard,
           ));
@@ -1659,7 +1624,7 @@ export class Player {
         this.game.log('${0} used ${1} action', (b) => b.player(this).card(foundCard));
         const action = foundCard.action(this);
         if (action !== undefined) {
-          this.game.defer(new DeferredAction(
+          this.game.defer(new SimpleDeferredAction(
             this,
             () => action,
           ));
@@ -1924,7 +1889,8 @@ export class Player {
   }
 
   private getStandardProjects(): Array<StandardProjectCard> {
-    return new CardLoader(this.game.gameOptions)
+    const gameOptions = this.game.gameOptions;
+    return new CardLoader(gameOptions)
       .getStandardProjects()
       .filter((card) => {
         switch (card.name) {
@@ -1933,11 +1899,15 @@ export class Player {
           return false;
         // For buffer gas, show ONLY IF in solo AND 63TR mode
         case CardName.BUFFER_GAS_STANDARD_PROJECT:
-          return this.game.isSoloMode() && this.game.gameOptions.soloTR;
+          return this.game.isSoloMode() && gameOptions.soloTR;
         case CardName.AIR_SCRAPPING_STANDARD_PROJECT:
-          return this.game.gameOptions.altVenusBoard === false;
+          return gameOptions.altVenusBoard === false;
         case CardName.AIR_SCRAPPING_STANDARD_PROJECT_VARIANT:
-          return this.game.gameOptions.altVenusBoard === true;
+          return gameOptions.altVenusBoard === true;
+        case CardName.MOON_COLONY_STANDARD_PROJECT_V2:
+        case CardName.MOON_MINE_STANDARD_PROJECT_V2:
+        case CardName.MOON_ROAD_STANDARD_PROJECT_V2:
+          return gameOptions.moonStandardProjectVariant === true;
         default:
           return true;
         }
@@ -1958,7 +1928,17 @@ export class Player {
     );
   }
 
-  public takeAction(): void {
+  /**
+   * Set up a player taking their next action.
+   *
+   * This method indicates the avalilable actions by setting the `waitingFor` attribute of this player.
+   *
+   * @param {boolean} saveBeforeTakingAction when true, the game state is saved. Default is `true`. This
+   * should only be false in testing and when this method is called during game deserialization. In other
+   * words, don't set this value unless you know what you're doing.
+   */
+  // @ts-ignore saveBeforeTakingAction is unused at the moment.
+  public takeAction(saveBeforeTakingAction: boolean = true): void {
     const game = this.game;
 
     if (game.deferredActions.length > 0) {
@@ -1968,9 +1948,8 @@ export class Player {
 
     const allOtherPlayersHavePassed = this.allOtherPlayersHavePassed();
 
-    if (this.actionsTakenThisRound === 0 || game.gameOptions.undoOption) {
-      game.save();
-    }
+    if (this.actionsTakenThisRound === 0 || game.gameOptions.undoOption) game.save();
+    // if (saveBeforeTakingAction) game.save();
 
     // Prelude cards have to be played first
     if (this.preludeCardsInHand.length > 0) {
@@ -2003,7 +1982,6 @@ export class Player {
 
     const corporationCard = this.corporationCard;
 
-
     // Terraforming Mars FAQ says:
     //   If for any reason you are not able to perform your mandatory first action (e.g. if
     //   all 3 Awards are claimed before starting your turn as Vitor), you can skip this and
@@ -2027,7 +2005,7 @@ export class Player {
           }],
         },
         corporationCard.initialActionText, () => {
-          game.defer(new DeferredAction(this, () => {
+          game.defer(new SimpleDeferredAction(this, () => {
             if (corporationCard.initialAction) {
               return corporationCard.initialAction(this);
             } else {
@@ -2419,7 +2397,7 @@ export class Player {
   /* Shorthand for deferring things */
   public defer(input: PlayerInput | undefined, priority: Priority = Priority.DEFAULT): void {
     if (input === undefined) return;
-    const action = new DeferredAction(this, () => input, priority);
+    const action = new SimpleDeferredAction(this, () => input, priority);
     this.game.defer(action);
   }
 }
