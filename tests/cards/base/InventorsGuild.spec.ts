@@ -13,7 +13,7 @@ describe('InventorsGuild', function() {
     card = new InventorsGuild();
     player = TestPlayers.BLUE.newPlayer();
     const redPlayer = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('foobar', [player, redPlayer], player);
+    game = Game.newInstance('gameid', [player, redPlayer], player);
   });
 
   it('Should play', function() {
@@ -40,7 +40,7 @@ describe('InventorsGuild', function() {
   it('Cannot buy card if cannot pay', function() {
     player.megaCredits = 2;
     const selectCard = card.action(player) as SelectCard<IProjectCard>;
-    expect(selectCard.maxCardsToSelect).to.eq(0);
+    expect(selectCard.config.max).to.eq(0);
     selectCard.cb([]);
     expect(game.deferredActions).has.lengthOf(0);
     expect(game.dealer.discarded).has.lengthOf(1);

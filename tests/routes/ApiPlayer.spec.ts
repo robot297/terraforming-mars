@@ -15,18 +15,18 @@ describe('ApiPlayer', function() {
     res = new MockResponse();
   });
 
-  it('fails game not found', () => {
+  it('fails game not found', async () => {
     scaffolding.url = '/api/player?id=googoo';
-    scaffolding.get(ApiPlayer.INSTANCE, res);
+    await scaffolding.asyncGet(ApiPlayer.INSTANCE, res);
     expect(res.content).eq('Not found');
   });
 
-  it('pulls player', () => {
+  it('pulls player', async () => {
     const player = TestPlayers.BLACK.newPlayer();
     scaffolding.url = '/api/player?id=' + player.id;
     const game = Game.newInstance('game-id', [player], player);
-    scaffolding.ctx.gameLoader.add(game);
-    scaffolding.get(ApiPlayer.INSTANCE, res);
+    await scaffolding.ctx.gameLoader.add(game);
+    await scaffolding.asyncGet(ApiPlayer.INSTANCE, res);
     const response: PlayerViewModel = JSON.parse(res.content);
     expect(response.id).eq(player.id);
   });

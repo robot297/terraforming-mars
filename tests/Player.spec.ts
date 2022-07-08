@@ -16,7 +16,7 @@ import {Color} from '../src/common/Color';
 import {VictoryPointsBreakdown} from '../src/VictoryPointsBreakdown';
 import {CardName} from '../src/common/cards/CardName';
 import {GlobalParameter} from '../src/common/GlobalParameter';
-import {TestingUtils} from './TestingUtils';
+import {formatLogMessage, setCustomGameOptions} from './TestingUtils';
 import {Units} from '../src/common/Units';
 import {SelfReplicatingRobots} from '../src/cards/promo/SelfReplicatingRobots';
 import {Pets} from '../src/cards/base/Pets';
@@ -29,7 +29,7 @@ describe('Player', function() {
   });
   it('Should throw error if nothing to process', function() {
     const player = TestPlayers.BLUE.newPlayer();
-    Game.newInstance('foobar', [player], player);
+    Game.newInstance('gameid', [player], player);
     (player as any).setWaitingFor(undefined, undefined);
     expect(function() {
       player.process([]);
@@ -40,12 +40,12 @@ describe('Player', function() {
     const player = TestPlayers.BLUE.newPlayer();
     const player2 = TestPlayers.RED.newPlayer();
     const player3 = TestPlayers.YELLOW.newPlayer();
-    Game.newInstance('foobar', [player, player2, player3], player);
+    Game.newInstance('gameid', [player, player2, player3], player);
     player2.addProduction(Resources.ENERGY, 2);
     player3.addProduction(Resources.ENERGY, 2);
     player.playedCards.push(new LunarBeam());
     player.playedCards.push(new LunarBeam());
-    const action = card.play(player); //  Game.newInstance('foobar', [player, player2, player3], player));
+    const action = card.play(player); //  Game.newInstance('gameid', [player, player2, player3], player));
     if (action !== undefined) {
       player.setWaitingFor(action);
       player.process([[player2.id]]);
@@ -57,10 +57,10 @@ describe('Player', function() {
     const player = TestPlayers.BLUE.newPlayer();
     // const redPlayer = TestPlayers.RED.newPlayer();
 
-    Game.newInstance('foobar', [player], player);
+    Game.newInstance('gameid', [player], player);
     player.playedCards.push(new LunarBeam());
     player.playedCards.push(new LunarBeam());
-    const action = card.play(player); // , Game.newInstance('foobar', [player, redPlayer], player));
+    const action = card.play(player); // , Game.newInstance('gameid', [player, redPlayer], player));
     if (action !== undefined) {
       player.setWaitingFor(action);
       expect(player.getWaitingFor()).is.not.undefined;
@@ -81,8 +81,8 @@ describe('Player', function() {
     const redPlayer = TestPlayers.RED.newPlayer();
 
     player.addProduction(Resources.HEAT, 2);
-    Game.newInstance('foobar', [player, redPlayer], player);
-    const action = card.play(player); // Game.newInstance('foobar', [player, redPlayer], player));
+    Game.newInstance('gameid', [player, redPlayer], player);
+    const action = card.play(player); // Game.newInstance('gameid', [player, redPlayer], player));
     expect(action).is.not.undefined;
     if (action === undefined) return;
     player.setWaitingFor(action);
@@ -95,7 +95,7 @@ describe('Player', function() {
     }).to.throw('Incorrect options provided');
     expect(function() {
       player.process([['foobar']]);
-    }).to.throw('Number not provided for amount');
+    }).to.throw('Amount is not a number');
     player.process([['1']]);
     expect(player.getProduction(Resources.HEAT)).to.eq(1);
     expect(player.getProduction(Resources.MEGACREDITS)).to.eq(1);
@@ -114,7 +114,7 @@ describe('Player', function() {
   });
   it('Chains onend functions from player inputs', function(done) {
     const player = TestPlayers.BLUE.newPlayer();
-    Game.newInstance('foobar', [player], player);
+    Game.newInstance('gameid', [player], player);
     const mockOption3 = new SelectOption('Mock select option 3', 'Save', () => {
       return undefined;
     });
@@ -135,14 +135,14 @@ describe('Player', function() {
   it('Omits buffer gas for non solo games', function() {
     const player = TestPlayers.BLUE.newPlayer();
     const player2= TestPlayers.RED.newPlayer();
-    Game.newInstance('foobar', [player, player2], player);
+    Game.newInstance('gameid', [player, player2], player);
     const option = player.getStandardProjectOption();
     const bufferGas = option.cards.find((card) => card.name === CardName.BUFFER_GAS_STANDARD_PROJECT);
     expect(bufferGas).to.be.undefined;
   });
   it('Omit buffer gas for solo games without 63 TR', function() {
     const player = TestPlayers.BLUE.newPlayer();
-    Game.newInstance('foobar', [player], player);
+    Game.newInstance('gameid', [player], player);
     const option = player.getStandardProjectOption();
     const bufferGas = option.cards.find((card) => card.name === CardName.BUFFER_GAS_STANDARD_PROJECT);
     expect(bufferGas).to.be.undefined;
@@ -150,8 +150,8 @@ describe('Player', function() {
 
   it('wgt includes all parameters at the game start', () => {
     const player = TestPlayers.BLUE.newPlayer();
-    const gameOptions = TestingUtils.setCustomGameOptions({venusNextExtension: false});
-    Game.newInstance('foobar', [player], player, gameOptions);
+    const gameOptions = setCustomGameOptions({venusNextExtension: false});
+    Game.newInstance('gameid', [player], player, gameOptions);
     player.worldGovernmentTerraforming();
     const parameters = waitingForGlobalParameters(player);
     expect(parameters).to.have.members([
@@ -162,8 +162,8 @@ describe('Player', function() {
 
   it('wgt includes all parameters at the game start, with Venus', () => {
     const player = TestPlayers.BLUE.newPlayer();
-    const gameOptions = TestingUtils.setCustomGameOptions({venusNextExtension: true});
-    Game.newInstance('foobar', [player], player, gameOptions);
+    const gameOptions = setCustomGameOptions({venusNextExtension: true});
+    Game.newInstance('gameid', [player], player, gameOptions);
     player.worldGovernmentTerraforming();
     const parameters = waitingForGlobalParameters(player);
     expect(parameters).to.have.members([
@@ -175,8 +175,8 @@ describe('Player', function() {
 
   it('wgt includes all parameters at the game start, with The Moon', () => {
     const player = TestPlayers.BLUE.newPlayer();
-    const gameOptions = TestingUtils.setCustomGameOptions({venusNextExtension: false, moonExpansion: true});
-    Game.newInstance('foobar', [player], player, gameOptions);
+    const gameOptions = setCustomGameOptions({venusNextExtension: false, moonExpansion: true});
+    Game.newInstance('gameid', [player], player, gameOptions);
     player.worldGovernmentTerraforming();
     const parameters = waitingForGlobalParameters(player);
     expect(parameters).to.have.members([
@@ -190,7 +190,7 @@ describe('Player', function() {
 
   it('Include buffer gas for solo games with 63 TR', function() {
     const player = TestPlayers.BLUE.newPlayer();
-    const game = Game.newInstance('foobar', [player], player);
+    const game = Game.newInstance('gameid', [player], player);
     game.gameOptions.soloTR = true;
     const option = player.getStandardProjectOption();
     const bufferGas = option.cards.find((card) => card.name === CardName.BUFFER_GAS_STANDARD_PROJECT);
@@ -276,6 +276,7 @@ describe('Player', function() {
         afterFirstAction: false,
         lastStoppedAt: 0,
       } as SerializedTimer,
+      totalDelegatesPlaced: 0,
       victoryPointsByGeneration: [],
     };
 
@@ -608,7 +609,7 @@ describe('Player', function() {
 
   it('addResourceTo', () => {
     const player = TestPlayers.BLUE.newPlayer();
-    const game = Game.newInstance('foobar', [player], player);
+    const game = Game.newInstance('gameid', [player], player);
 
     const log = game.gameLog;
     log.length = 0; // Empty it out.
@@ -639,7 +640,7 @@ describe('Player', function() {
   it('addResourceTo with Mons Insurance hook does not remove when no credits', () => {
     const player1 = TestPlayers.BLUE.newPlayer();
     const player2 = TestPlayers.RED.newPlayer();
-    const game = Game.newInstance('foobar', [player1, player2], player1);
+    const game = Game.newInstance('gameid', [player1, player2], player1);
     player1.megaCredits = 0;
     player1.setProductionForTest({
       megacredits: -5,
@@ -654,7 +655,7 @@ describe('Player', function() {
 
   it('removeResourcesFrom', () => {
     const player = TestPlayers.BLUE.newPlayer();
-    const game = Game.newInstance('foobar', [player], player);
+    const game = Game.newInstance('gameid', [player], player);
 
     const log = game.gameLog;
     log.length = 0; // Empty it out.
@@ -692,7 +693,7 @@ describe('Player', function() {
 
   it('adds resources', () => {
     const player = TestPlayers.BLUE.newPlayer();
-    Game.newInstance('x', [player], player);
+    Game.newInstance('gameid', [player], player);
     player.megaCredits = 10;
     // adds any positive amount
     player.addResource(Resources.MEGACREDITS, 12);
@@ -713,7 +714,7 @@ describe('Player', function() {
 
   it('addResource logging', () => {
     const player = TestPlayers.BLUE.newPlayer();
-    const game = Game.newInstance('foobar', [player], player);
+    const game = Game.newInstance('gameid', [player], player);
 
     const log = game.gameLog;
     log.length = 0; // Empty it out.
@@ -723,36 +724,36 @@ describe('Player', function() {
 
     player.addResource(Resources.MEGACREDITS, 12, {log: true});
     const logEntry = log[0];
-    expect(TestingUtils.formatLogMessage(logEntry)).eq('blue\'s megacredits amount increased by 12');
+    expect(formatLogMessage(logEntry)).eq('blue\'s megacredits amount increased by 12');
   });
 
   it('addResource logging from player', () => {
     const player = TestPlayers.BLUE.newPlayer();
     const player2 = TestPlayers.RED.newPlayer();
-    const game = Game.newInstance('foobar', [player, player2], player);
+    const game = Game.newInstance('gameid', [player, player2], player);
 
     player.megaCredits = 5;
     player.addResource(Resources.MEGACREDITS, -5, {log: true, from: player2});
 
     const log = game.gameLog;
     const logEntry = log[log.length - 1];
-    expect(TestingUtils.formatLogMessage(logEntry)).eq('blue\'s megacredits amount decreased by 5 by red');
+    expect(formatLogMessage(logEntry)).eq('blue\'s megacredits amount decreased by 5 by red');
   });
 
   it('addResource logging from global event', () => {
     const player = TestPlayers.BLUE.newPlayer();
-    const game = Game.newInstance('foobar', [player], player);
+    const game = Game.newInstance('gameid', [player], player);
 
     player.addResource(Resources.MEGACREDITS, 12, {log: true, from: GlobalEventName.ASTEROID_MINING});
 
     const log = game.gameLog;
     const logEntry = log[log.length - 1];
-    expect(TestingUtils.formatLogMessage(logEntry)).eq('blue\'s megacredits amount increased by 12 by Asteroid Mining');
+    expect(formatLogMessage(logEntry)).eq('blue\'s megacredits amount increased by 12 by Asteroid Mining');
   });
 
   it('addResource logs error when deducting too much', () => {
     const player = TestPlayers.BLUE.newPlayer();
-    Game.newInstance('foobar', [player], player);
+    Game.newInstance('gameid', [player], player);
 
     player.megaCredits = 10;
     const warn = console.warn;
@@ -767,7 +768,7 @@ describe('Player', function() {
     expect(consoleLog[0][0]).eq('Illegal state: Adjusting -12 megacredits when player has 10');
     expect(JSON.parse(consoleLog[0][1])).deep.eq(
       {
-        'gameId': 'foobar',
+        'gameId': 'gameid',
         'lastSaveId': 0,
         'logAge': 7,
         'currentPlayer': 'p-blue-id',

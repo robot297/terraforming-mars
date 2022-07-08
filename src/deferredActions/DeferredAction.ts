@@ -2,6 +2,7 @@ import {Player} from '../Player';
 import {PlayerInput} from '../PlayerInput';
 
 export enum Priority {
+  SUPERPOWER = -1, // Legacy value that should not be further used.
   DECLARE_CLONE_TAG, // Used for Pathfinders. First thing a player must do before further effects.
   COST, // Cost of a blue card action, or paying Reds costs. Must happen before the effects.
   OPPONENT_TRIGGER, // Any effect from one of your opponent's card that triggers during your turn.
@@ -20,7 +21,7 @@ export enum Priority {
 }
 
 export abstract class DeferredAction {
-  public queueId?: number;
+  public queueId: number = -1;
   constructor(
     public player: Player,
     public priority: Priority = Priority.DEFAULT,

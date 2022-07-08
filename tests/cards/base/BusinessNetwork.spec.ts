@@ -14,7 +14,7 @@ describe('BusinessNetwork', function() {
     card = new BusinessNetwork();
     player = TestPlayers.BLUE.newPlayer();
     const redPlayer = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('foobar', [player, redPlayer], player);
+    game = Game.newInstance('gameid', [player, redPlayer], player);
   });
 
   it('Should play', function() {
@@ -36,7 +36,7 @@ describe('BusinessNetwork', function() {
     player.megaCredits = 2;
     const action = card.action(player);
     expect(action).instanceOf(SelectCard);
-    expect(action!.maxCardsToSelect).to.eq(0);
+    expect(action!.config.max).to.eq(0);
 
     (action! as SelectCard<IProjectCard>).cb([]);
     expect(game.dealer.discarded).has.lengthOf(1);

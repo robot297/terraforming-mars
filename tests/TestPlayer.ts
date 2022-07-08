@@ -4,10 +4,11 @@ import {Color} from '../src/common/Color';
 import {Units} from '../src/common/Units';
 import {Tags} from '../src/common/cards/Tags';
 import {InputResponse} from '../src/common/inputs/InputResponse';
+import {PlayerId} from '../src/common/Types';
 
 export class TestPlayer extends Player {
-  constructor(color: Color) {
-    super('player-' + color, color, false, 0, 'p-' + color + '-id');
+  constructor(color: Color, beginner: boolean = false) {
+    super('player-' + color, color, beginner, 0, 'p-' + color + '-id' as PlayerId);
   }
 
   public setProductionForTest(units: Partial<Units>) {
@@ -53,6 +54,7 @@ export class TestPlayer extends Player {
     };
   }
 
+  // Just makes it public, and therefore callable for testing.
   public override getStandardProjectOption() {
     return super.getStandardProjectOption();
   }

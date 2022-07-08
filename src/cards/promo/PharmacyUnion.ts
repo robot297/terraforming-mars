@@ -8,7 +8,7 @@ import {SelectOption} from '../../inputs/SelectOption';
 import {OrOptions} from '../../inputs/OrOptions';
 import {IProjectCard} from '../IProjectCard';
 import {CardType} from '../../common/cards/CardType';
-import {SimpleDeferredAction} from '../../deferredActions/DeferredAction';
+import {Priority, SimpleDeferredAction} from '../../deferredActions/DeferredAction';
 import {CardRenderer} from '../render/CardRenderer';
 import {Size} from '../../common/cards/render/Size';
 import {Resources} from '../../common/Resources';
@@ -110,7 +110,6 @@ export class PharmacyUnion extends Card implements ICorporationCard {
       }
     }
 
-
     if (isPharmacyUnion && hasScienceTag) {
       const scienceTags = player.cardTagCount(card, Tags.SCIENCE);
       for (let i = 0; i < scienceTags; i++) {
@@ -159,14 +158,17 @@ export class PharmacyUnion extends Card implements ICorporationCard {
         player,
         () => {
           const microbeTagCount = card.tags.filter((cardTag) => cardTag === Tags.MICROBE).length;
-          const player = game.getPlayers().find((p) => p.isCorporation(this.name))!;
+          const player = game.getPlayers().find((p) => p.isCorporation(this.name));
+          if (player === undefined) {
+            throw new Error(`PharmacyUnion: did not find player for ${game.id}`);
+          }
           const megaCreditsLost = Math.min(player.megaCredits, microbeTagCount * 4);
           player.addResourceTo(this, microbeTagCount);
           player.megaCredits -= megaCreditsLost;
           game.log('${0} added a disease to ${1} and lost ${2} M€', (b) => b.player(player).card(this).number(megaCreditsLost));
           return undefined;
         },
-      ), -1); // Make it a priority
+      ), Priority.SUPERPOWER);
     }
 
     return undefined;

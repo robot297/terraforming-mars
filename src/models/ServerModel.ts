@@ -103,11 +103,11 @@ export class Server {
     const thisPlayer: PublicPlayerModel = players[thisPlayerIndex];
 
     return {
-      cardsInHand: this.getCards(player, player.cardsInHand, {showNewCost: true}),
+      cardsInHand: this.getCards(player, player.cardsInHand, {showCalculatedCost: true}),
       dealtCorporationCards: this.getCards(player, player.dealtCorporationCards),
       dealtPreludeCards: this.getCards(player, player.dealtPreludeCards),
       dealtProjectCards: this.getCards(player, player.dealtProjectCards),
-      draftedCards: this.getCards(player, player.draftedCards, {showNewCost: true}),
+      draftedCards: this.getCards(player, player.draftedCards, {showCalculatedCost: true}),
       game: this.getGameModel(player.game),
       id: player.id,
       pickedCorporationCard: player.pickedCorporationCard ? this.getCards(player, [player.pickedCorporationCard]) : [],
@@ -121,7 +121,7 @@ export class Server {
   public static getSpectatorModel(game: Game): SpectatorModel {
     return {
       color: Color.NEUTRAL,
-      id: game.spectatorId ?? '',
+      id: game.spectatorId,
       game: this.getGameModel(game),
       players: game.getPlayersInGenerationOrder().map(this.getPlayer),
       thisPlayer: undefined,
@@ -129,15 +129,18 @@ export class Server {
   }
 
   public static getSelfReplicatingRobotsTargetCards(player: Player): Array<CardModel> {
-    return player.getSelfReplicatingRobotsTargetCards().map((targetCard) => ({
-      resources: targetCard.resourceCount,
-      resourceType: undefined, // Card on SRR cannot gather its own resources (if any)
-      name: targetCard.card.name,
-      calculatedCost: player.getCardCost(targetCard.card),
-      cardType: CardType.ACTIVE,
-      isDisabled: false,
-      reserveUnits: Units.EMPTY, // I wonder if this could just be removed.
-    }));
+    return player.getSelfReplicatingRobotsTargetCards().map((targetCard) => {
+      const model: CardModel = {
+        resources: targetCard.resourceCount,
+        resourceType: undefined, // Card on SRR cannot gather its own resources (if any)
+        name: targetCard.card.name,
+        calculatedCost: player.getCardCost(targetCard.card),
+        cardType: CardType.ACTIVE,
+        isDisabled: false,
+        reserveUnits: Units.EMPTY, // I wonder if this could just be removed.
+      };
+      return model;
+    });
   }
 
   public static getMilestones(game: Game): Array<ClaimedMilestoneModel> {
@@ -208,15 +211,20 @@ export class Server {
     if (card.name === CardName.CRESCENT_RESEARCH_ASSOCIATION) {
       discount = [{tag: Tags.MOON, amount: player.getTagCount(Tags.MOON)}];
     }
+    if (card.name === CardName.MARS_DIRECT) {
+      discount = [{tag: Tags.MARS, amount: player.getTagCount(Tags.MARS)}];
+    }
 
     return {
       name: card.name,
       resources: card.resourceCount,
       cardType: CardType.CORPORATION,
-      isDisabled: card.isDisabled,
+      isDisabled: card.isDisabled || false,
       warning: card.warning,
       discount: discount,
-    } as CardModel;
+      resourceType: card.resourceType,
+      reserveUnits: Units.EMPTY,
+    };
   }
 
   public static getWaitingFor(
@@ -275,7 +283,7 @@ export class Server {
       break;
     case PlayerInputTypes.SELECT_HOW_TO_PAY_FOR_PROJECT_CARD:
       const shtpfpc: SelectHowToPayForProjectCard = waitingFor as SelectHowToPayForProjectCard;
-      playerInputModel.cards = this.getCards(player, shtpfpc.cards, {showNewCost: true, reserveUnits: shtpfpc.reserveUnits});
+      playerInputModel.cards = this.getCards(player, shtpfpc.cards, {showCalculatedCost: true, reserveUnits: shtpfpc.reserveUnits});
       playerInputModel.microbes = shtpfpc.microbes;
       playerInputModel.floaters = shtpfpc.floaters;
       playerInputModel.canUseHeat = shtpfpc.canUseHeat;
@@ -285,17 +293,15 @@ export class Server {
     case PlayerInputTypes.SELECT_CARD:
       const selectCard = waitingFor as SelectCard<ICard>;
       playerInputModel.cards = this.getCards(player, selectCard.cards, {
-        showNewCost: !selectCard.played,
-        showResources: selectCard.played,
-        enabled: selectCard.enabled,
+        showCalculatedCost: selectCard.config.played === false || selectCard.config.played === CardName.SELF_REPLICATING_ROBOTS,
+        showResources: selectCard.config.played === true || selectCard.config.played === CardName.SELF_REPLICATING_ROBOTS,
+        enabled: selectCard.config.enabled,
       });
-      playerInputModel.maxCardsToSelect = selectCard.maxCardsToSelect;
-      playerInputModel.minCardsToSelect = selectCard.minCardsToSelect;
-      playerInputModel.showOnlyInLearnerMode = selectCard.enabled?.every((p: boolean) => p === false);
-      playerInputModel.selectBlueCardAction = selectCard.selectBlueCardAction;
-      if (selectCard.showOwner) {
-        playerInputModel.showOwner = true;
-      }
+      playerInputModel.maxCardsToSelect = selectCard.config.max;
+      playerInputModel.minCardsToSelect = selectCard.config.min;
+      playerInputModel.showOnlyInLearnerMode = selectCard.config.enabled?.every((p: boolean) => p === false);
+      playerInputModel.selectBlueCardAction = selectCard.config.selectBlueCardAction;
+      playerInputModel.showOwner = selectCard.config?.showOwner === true;
       break;
     case PlayerInputTypes.SELECT_COLONY:
       playerInputModel.coloniesModel = this.getColonyModel(player.game, (waitingFor as SelectColony).colonies);
@@ -368,24 +374,27 @@ export class Server {
     cards: Array<ICard>,
     options: {
     showResources?: boolean,
-    showNewCost?: boolean,
+    showCalculatedCost?: boolean,
     reserveUnits?: Array<Units>,
     enabled?: Array<boolean>, // If provided, then the cards with false in `enabled` are not selectable and grayed out
   } = {},
   ): Array<CardModel> {
-    return cards.map((card, index) => ({
-      resources: options.showResources ? card.resourceCount : undefined,
-      resourceType: card.resourceType,
-      name: card.name,
-      calculatedCost: options.showNewCost ? (card.cost === undefined ? undefined : player.getCardCost(card as IProjectCard)) : card.cost,
-      cardType: card.cardType,
-      isDisabled: options.enabled?.[index] === false,
-      warning: card.warning,
-      reserveUnits: options.reserveUnits ? options.reserveUnits[index] : Units.EMPTY,
-      bonusResource: (card as IProjectCard).bonusResource,
-      discount: card.cardDiscount === undefined ? undefined : (Array.isArray(card.cardDiscount) ? card.cardDiscount : [card.cardDiscount]),
-      cloneTag: isICloneTagCard(card) ? card.cloneTag : undefined,
-    }));
+    return cards.map((card, index) => {
+      const model: CardModel = {
+        resources: options.showResources ? card.resourceCount : undefined,
+        resourceType: card.resourceType,
+        name: card.name,
+        calculatedCost: options.showCalculatedCost ? (card.cost === undefined ? undefined : player.getCardCost(card as IProjectCard)) : card.cost,
+        cardType: card.cardType,
+        isDisabled: options.enabled?.[index] === false,
+        warning: card.warning,
+        reserveUnits: options.reserveUnits ? options.reserveUnits[index] : Units.EMPTY,
+        bonusResource: (card as IProjectCard).bonusResource,
+        discount: card.cardDiscount === undefined ? undefined : (Array.isArray(card.cardDiscount) ? card.cardDiscount : [card.cardDiscount]),
+        cloneTag: isICloneTagCard(card) ? card.cloneTag : undefined,
+      };
+      return model;
+    });
   }
 
   public static getPlayer(player: Player): PublicPlayerModel {
@@ -394,7 +403,7 @@ export class Server {
       actionsTakenThisRound: player.actionsTakenThisRound,
       actionsTakenThisGame: player.actionsTakenThisGame,
       actionsThisGeneration: Array.from(player.getActionsThisGeneration()),
-      availableBlueCardActionCount: player.getAvailableBlueActionCount(),
+      availableBlueCardActionCount: player.getPlayableActionCards().length,
       cardCost: player.cardCost,
       cardDiscount: player.cardDiscount,
       cardsInHandNbr: player.cardsInHand.length,
@@ -471,13 +480,13 @@ export class Server {
 
   private static getSpaces(board: Board): Array<SpaceModel> {
     const volcanicSpaceIds = board.getVolcanicSpaceIds();
-    const noctisCitySpaceIds = board.getNoctisCitySpaceIds();
+    const noctisCitySpaceIds = board.getNoctisCitySpaceId();
 
     return board.spaces.map((space) => {
       let highlight: SpaceHighlight = undefined;
       if (volcanicSpaceIds.includes(space.id)) {
         highlight = 'volcanic';
-      } else if (noctisCitySpaceIds.includes(space.id)) {
+      } else if (noctisCitySpaceIds === space.id) {
         highlight = 'noctis';
       }
       return {

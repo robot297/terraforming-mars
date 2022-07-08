@@ -3,13 +3,14 @@
       <div class="card-content-wrapper" v-i18n>
           <div v-if="!isStandardProject()" class="card-cost-and-tags">
               <CardCost :amount="getCost()" :newCost="getReducedCost()" />
+              <card-help v-show="hasHelp" :name="card.name" />
               <CardTags :tags="getTags()" />
           </div>
           <CardTitle :title="card.name" :type="getCardType()"/>
           <CardContent v-if="getCardMetadata() !== undefined" :metadata="getCardMetadata()" :requirements="getCardRequirements()" :isCorporation="isCorporationCard()"/>
       </div>
       <CardExpansion :expansion="getCardExpansion()" :isCorporation="isCorporationCard()"/>
-      <CardResourceCounter v-if="hasResourceType" :amount="getResourceAmount(card)" :type="resourceType" />
+      <CardResourceCounter v-if="hasResourceType" :amount="getResourceAmount()" :type="resourceType" />
       <CardExtraContent :card="card" />
       <slot/>
   </div>
@@ -28,17 +29,27 @@ import CardExpansion from './CardExpansion.vue';
 import CardTags from './CardTags.vue';
 import {CardType} from '@/common/cards/CardType';
 import CardContent from './CardContent.vue';
+import CardHelp from './CardHelp.vue';
 import {ICardMetadata} from '@/common/cards/ICardMetadata';
 import {ICardRequirements} from '@/common/cards/ICardRequirements';
 import {Tags} from '@/common/cards/Tags';
 import {getPreferences} from '@/client/utils/PreferencesManager';
 import {CardResource} from '@/common/CardResource';
 import {getCardOrThrow} from '@/client/cards/ClientCardManifest';
+import {CardName} from '@/common/cards/CardName';
+
+const names = [
+  CardName.BOTANICAL_EXPERIENCE,
+  CardName.MARS_DIRECT,
+  CardName.LUNA_ECUMENOPOLIS,
+  CardName.ROBOTIC_WORKFORCE,
+];
 
 export default Vue.extend({
   name: 'Card',
   components: {
     CardTitle,
+    CardHelp,
     CardResourceCounter,
     CardCost,
     CardExtraContent,
@@ -47,14 +58,18 @@ export default Vue.extend({
     CardContent,
   },
   props: {
-    'card': {
+    card: {
       type: Object as () => CardModel,
       required: true,
     },
-    'actionUsed': {
+    actionUsed: {
       type: Boolean,
       required: false,
       default: false,
+    },
+    robotCard: {
+      type: Object as () => CardModel | undefined,
+      required: false,
     },
   },
   data() {
@@ -120,8 +135,8 @@ export default Vue.extend({
     getCardRequirements(): ICardRequirements | undefined {
       return this.cardInstance.requirements;
     },
-    getResourceAmount(card: CardModel): number {
-      return card.resources !== undefined ? card.resources : 0;
+    getResourceAmount(): number {
+      return this.card.resources || this.robotCard?.resources || 0;
     },
     isCorporationCard() : boolean {
       return this.getCardType() === CardType.CORPORATION;
@@ -132,12 +147,18 @@ export default Vue.extend({
   },
   computed: {
     hasResourceType(): boolean {
-      return this.card.resourceType !== undefined || this.cardInstance.resourceType !== undefined;
+      return this.card.resourceType !== undefined ||
+        this.cardInstance.resourceType !== undefined ||
+        this.robotCard !== undefined;
     },
     resourceType(): CardResource {
+      if (this.robotCard !== undefined) return CardResource.RESOURCE_CUBE;
       if (this.card.resourceType !== undefined) return this.card.resourceType;
       if (this.cardInstance.resourceType !== undefined) return this.cardInstance.resourceType;
       return CardResource.RESOURCE_CUBE;
+    },
+    hasHelp(): boolean {
+      return names.includes(this.card.name) && getPreferences().experimental_ui;
     },
   },
 });

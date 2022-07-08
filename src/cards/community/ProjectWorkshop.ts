@@ -14,6 +14,9 @@ import {Size} from '../../common/cards/render/Size';
 import {AltSecondaryTag} from '../../common/cards/render/AltSecondaryTag';
 import {Resources} from '../../common/Resources';
 import {digit} from '../Options';
+import {PartyHooks} from '../../turmoil/parties/PartyHooks';
+import {PartyName} from '../../common/turmoil/PartyName';
+import {REDS_RULING_POLICY_COST} from '../../common/constants';
 
 export class ProjectWorkshop extends Card implements ICorporationCard {
   constructor() {
@@ -57,13 +60,23 @@ export class ProjectWorkshop extends Card implements ICorporationCard {
     return undefined;
   }
 
+  private getEligibleCards(player: Player) {
+    const cards = player.getCardsByCardType(CardType.ACTIVE);
+    if (!PartyHooks.shouldApplyPolicy(player, PartyName.REDS)) return cards;
+    return cards.filter((card) => {
+      const vp = card.getVictoryPoints(player);
+      if (vp <= 0) return true;
+      return player.canAfford(REDS_RULING_POLICY_COST * vp);
+    });
+  }
+
   public canAct(player: Player): boolean {
-    const activeCards = player.getCardsByCardType(CardType.ACTIVE);
-    return activeCards.length > 0 || player.megaCredits >= 3;
+    if (player.megaCredits >= 3) return true;
+    return this.getEligibleCards(player).length > 0;
   }
 
   public action(player: Player) {
-    const activeCards = player.getCardsByCardType(CardType.ACTIVE);
+    const activeCards = this.getEligibleCards(player);
 
     const flipBlueCard = new SelectOption(
       'Flip and discard a played blue card',
@@ -71,7 +84,7 @@ export class ProjectWorkshop extends Card implements ICorporationCard {
       () => {
         if (activeCards.length === 1) {
           this.convertCardPointsToTR(player, activeCards[0]);
-          this.discardPlayedCard(player, activeCards[0]);
+          player.discardPlayedCard(activeCards[0]);
           player.drawCard(2);
           return undefined;
         }
@@ -82,7 +95,7 @@ export class ProjectWorkshop extends Card implements ICorporationCard {
           activeCards,
           (foundCards) => {
             this.convertCardPointsToTR(player, foundCards[0]);
-            this.discardPlayedCard(player, foundCards[0]);
+            player.discardPlayedCard(foundCards[0]);
             player.drawCard(2);
             return undefined;
           },
@@ -111,17 +124,5 @@ export class ProjectWorkshop extends Card implements ICorporationCard {
     } else if (steps < 0) {
       player.decreaseTerraformRatingSteps(-steps, {log: true});
     }
-  }
-
-  private discardPlayedCard(player: Player, card: IProjectCard) {
-    const cardIndex = player.playedCards.findIndex((c) => c.name === card.name);
-    player.playedCards.splice(cardIndex, 1);
-    player.game.dealer.discard(card);
-
-    if (card.onDiscard) {
-      card.onDiscard(player);
-    }
-
-    player.game.log('${0} flipped and discarded ${1}', (b) => b.player(player).card(card));
   }
 }
