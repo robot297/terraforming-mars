@@ -1,31 +1,32 @@
 import {expect} from 'chai';
-import {FloaterTechnology} from '../../../src/cards/colonies/FloaterTechnology';
-import {ICard} from '../../../src/cards/ICard';
-import {Dirigibles} from '../../../src/cards/venusNext/Dirigibles';
-import {FloatingHabs} from '../../../src/cards/venusNext/FloatingHabs';
-import {Game} from '../../../src/Game';
-import {SelectCard} from '../../../src/inputs/SelectCard';
-import {Player} from '../../../src/Player';
-import {TestPlayers} from '../../TestPlayers';
+import {churnAction, cast} from '../../TestingUtils';
+import {FloaterTechnology} from '../../../src/server/cards/colonies/FloaterTechnology';
+import {ICard} from '../../../src/server/cards/ICard';
+import {Dirigibles} from '../../../src/server/cards/venusNext/Dirigibles';
+import {FloatingHabs} from '../../../src/server/cards/venusNext/FloatingHabs';
+import {Game} from '../../../src/server/Game';
+import {SelectCard} from '../../../src/server/inputs/SelectCard';
+import {TestPlayer} from '../../TestPlayer';
+import {testGame} from '../../TestGame';
 
 describe('FloaterTechnology', function() {
-  let card : FloaterTechnology; let player : Player; let game : Game;
+  let card: FloaterTechnology;
+  let player: TestPlayer;
+  let game: Game;
 
   beforeEach(function() {
     card = new FloaterTechnology();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('gameid', [player, redPlayer], player);
+    [game, player] = testGame(2);
   });
 
   it('Can play', function() {
-    const result = card.play();
+    const result = card.play(player);
     expect(result).is.undefined;
   });
 
   it('Can act without targets', function() {
-    expect(card.canAct()).is.true;
-    expect(card.action(player)).is.undefined;
+    expect(card.canAct(player)).is.true;
+    expect(churnAction(card, player)).is.undefined;
   });
 
   it('Acts automatically with single targets', function() {
@@ -44,10 +45,7 @@ describe('FloaterTechnology', function() {
     const floatingHabs = new FloatingHabs();
     player.playedCards.push(dirigibles, floatingHabs);
 
-    card.action(player);
-    expect(game.deferredActions).has.lengthOf(1);
-
-    const selectCard = game.deferredActions.peek()!.execute() as SelectCard<ICard>;
+    const selectCard = cast(churnAction(card, player), SelectCard<ICard>);
     selectCard.cb([floatingHabs]);
     expect(floatingHabs.resourceCount).to.eq(1);
     expect(dirigibles.resourceCount).to.eq(0);

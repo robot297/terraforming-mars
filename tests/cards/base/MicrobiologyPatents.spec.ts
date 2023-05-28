@@ -1,23 +1,22 @@
 import {expect} from 'chai';
-import {MicrobiologyPatents} from '../../../src/cards/pathfinders/MicrobiologyPatents';
-import {Virus} from '../../../src/cards/base/Virus';
-import {MicroMills} from '../../../src/cards/base/MicroMills';
-import {getTestPlayer, newTestGame} from '../../TestGame';
+import {MicrobiologyPatents} from '../../../src/server/cards/pathfinders/MicrobiologyPatents';
+import {Virus} from '../../../src/server/cards/base/Virus';
+import {MicroMills} from '../../../src/server/cards/base/MicroMills';
+import {testGame} from '../../TestGame';
 import {Units} from '../../../src/common/Units';
 
 describe('MicrobiologyPatents', function() {
   it('Should play', function() {
     const card = new MicrobiologyPatents();
-    const game = newTestGame(1);
-    const player = getTestPlayer(game, 0);
+    const [, player] = testGame(1);
 
-    const action = card.play();
+    const action = card.play(player);
     expect(action).is.undefined;
 
     card.onCardPlayed(player, new Virus());
-    expect(player.getProductionForTest()).deep.eq(Units.of({megacredits: 1}));
+    expect(player.production.asUnits()).deep.eq(Units.of({megacredits: 1}));
 
     card.onCardPlayed(player, new MicroMills());
-    expect(player.getProductionForTest()).deep.eq(Units.of({megacredits: 1}));
+    expect(player.production.asUnits()).deep.eq(Units.of({megacredits: 1}));
   });
 });

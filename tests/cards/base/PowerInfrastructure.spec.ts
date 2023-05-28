@@ -1,20 +1,18 @@
 import {expect} from 'chai';
-import {PowerInfrastructure} from '../../../src/cards/base/PowerInfrastructure';
-import {Game} from '../../../src/Game';
-import {Player} from '../../../src/Player';
-import {TestPlayers} from '../../TestPlayers';
+import {testGame} from '../../TestGame';
+import {PowerInfrastructure} from '../../../src/server/cards/base/PowerInfrastructure';
+import {TestPlayer} from '../../TestPlayer';
 
 describe('PowerInfrastructure', function() {
-  let card : PowerInfrastructure; let player : Player;
+  let card: PowerInfrastructure;
+  let player: TestPlayer;
 
   beforeEach(function() {
     card = new PowerInfrastructure();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    Game.newInstance('gameid', [player, redPlayer], player);
+    [/* skipped */, player] = testGame(2);
   });
 
-  it('Can\'t act', function() {
+  it('Can not act', function() {
     card.play(player);
     expect(card.canAct(player)).is.not.true;
   });

@@ -1,10 +1,9 @@
 import {expect} from 'chai';
-import {getTestPlayer, newTestGame} from '../../TestGame';
-import {Airliners} from '../../../src/cards/colonies/Airliners';
-import {Resources} from '../../../src/common/Resources';
-import {JovianLanterns} from '../../../src/cards/colonies/JovianLanterns';
-import {SearchForLife} from '../../../src/cards/base/SearchForLife';
-import {Game} from '../../../src/Game';
+import {testGame} from '../../TestGame';
+import {Airliners} from '../../../src/server/cards/colonies/Airliners';
+import {JovianLanterns} from '../../../src/server/cards/colonies/JovianLanterns';
+import {SearchForLife} from '../../../src/server/cards/base/SearchForLife';
+import {Game} from '../../../src/server/Game';
 import {TestPlayer} from '../../TestPlayer';
 import {runAllActions} from '../../TestingUtils';
 
@@ -15,8 +14,7 @@ describe('Airliners', function() {
 
   beforeEach(() => {
     card = new Airliners();
-    game = newTestGame(1);
-    player = getTestPlayer(game, 0);
+    [game, player] = testGame(1);
   });
 
   it('can play', function() {
@@ -46,7 +44,7 @@ describe('Airliners', function() {
   });
 
   it('Should play', function() {
-    expect(player.getProduction(Resources.MEGACREDITS)).eq(0);
+    expect(player.production.megacredits).eq(0);
 
     const jovianLanterns = new JovianLanterns();
     const searchForLife = new SearchForLife();
@@ -58,7 +56,7 @@ describe('Airliners', function() {
     runAllActions(game);
 
     expect(action).is.undefined;
-    expect(player.getProduction(Resources.MEGACREDITS)).eq(2);
+    expect(player.production.megacredits).eq(2);
     expect(jovianLanterns.resourceCount).eq(2);
   });
 });

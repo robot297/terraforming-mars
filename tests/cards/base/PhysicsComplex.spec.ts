@@ -1,18 +1,20 @@
 import {expect} from 'chai';
-import {PhysicsComplex} from '../../../src/cards/base/PhysicsComplex';
-import {Player} from '../../../src/Player';
-import {TestPlayers} from '../../TestPlayers';
+import {PhysicsComplex} from '../../../src/server/cards/base/PhysicsComplex';
+import {TestPlayer} from '../../TestPlayer';
+import {testGame} from '../../TestGame';
+import {runAllActions} from '../../TestingUtils';
 
 describe('PhysicsComplex', function() {
-  let card : PhysicsComplex; let player : Player;
+  let card: PhysicsComplex;
+  let player: TestPlayer;
 
   beforeEach(function() {
     card = new PhysicsComplex();
-    player = TestPlayers.BLUE.newPlayer();
+    [/* skipped */, player] = testGame(1);
   });
 
-  it('Can\'t act', function() {
-    card.play();
+  it('Can not act', function() {
+    card.play(player);
     player.energy = 5;
     expect(card.canAct(player)).is.not.true;
   });
@@ -23,6 +25,7 @@ describe('PhysicsComplex', function() {
     expect(card.canAct(player)).is.true;
 
     card.action(player);
+    runAllActions(player.game);
     expect(player.energy).to.eq(0);
     expect(card.resourceCount).to.eq(1);
   });

@@ -1,35 +1,37 @@
 import {expect} from 'chai';
-import {cast} from '../../TestingUtils';
-import {RegolithEaters} from '../../../src/cards/base/RegolithEaters';
-import {Game} from '../../../src/Game';
-import {OrOptions} from '../../../src/inputs/OrOptions';
-import {Player} from '../../../src/Player';
-import {TestPlayers} from '../../TestPlayers';
+import {cardAction, cast, runAllActions} from '../../TestingUtils';
+import {RegolithEaters} from '../../../src/server/cards/base/RegolithEaters';
+import {Game} from '../../../src/server/Game';
+import {OrOptions} from '../../../src/server/inputs/OrOptions';
+import {TestPlayer} from '../../TestPlayer';
+import {testGame} from '../../TestGame';
 
 describe('RegolithEaters', function() {
-  let card : RegolithEaters; let player : Player; let game : Game;
+  let card: RegolithEaters;
+  let player: TestPlayer;
+  let game: Game;
 
   beforeEach(function() {
     card = new RegolithEaters();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('gameid', [player, redPlayer], player);
+    [game, player] = testGame(2);
   });
 
   it('Should act', function() {
     player.playedCards.push(card);
-    const action = card.action(player);
-    expect(action).is.undefined;
+    expect(cardAction(card, player)).is.undefined;
     expect(card.resourceCount).to.eq(1);
 
-    card.action(player);
+    expect(cardAction(card, player)).is.undefined;
     expect(card.resourceCount).to.eq(2);
-    const orOptions = cast(card.action(player), OrOptions);
+
+    const orOptions = cast(cardAction(card, player), OrOptions);
 
     orOptions.options[1].cb();
+    runAllActions(game);
     expect(card.resourceCount).to.eq(3);
 
     orOptions.options[0].cb();
+    runAllActions(game);
     expect(card.resourceCount).to.eq(1);
     expect(game.getOxygenLevel()).to.eq(1);
   });

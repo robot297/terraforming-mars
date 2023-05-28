@@ -36,17 +36,17 @@
       :pathfindersExpansion="game.gameOptions.pathfindersExpansion"
       :altVenusBoard="game.gameOptions.altVenusBoard"
       :aresData="game.aresData"
-      :hideTiles="hideTiles"
-      @toggleHideTiles="hideTiles = !hideTiles"
+      :tileView="tileView"
+      @toggleTileView="cycleTileView()"
       id="shortkey-board"
     />
 
     <turmoil v-if="game.turmoil" :turmoil="game.turmoil"/>
 
-    <MoonBoard v-if="game.gameOptions.moonExpansion" :model="game.moon" :hideTiles="hideTiles"/>
+    <MoonBoard v-if="game.gameOptions.moonExpansion" :model="game.moon" :tileView="tileView"/>
 
     <div v-if="spectator.players.length > 1" class="player_home_block--milestones-and-awards">
-        <Milestone :milestones_list="game.milestones" />
+        <Milestone :milestones="game.milestones" />
         <Awards :awards="game.awards" />
     </div>
 
@@ -76,7 +76,7 @@
 import Vue from 'vue';
 
 import {GameModel} from '@/common/models/GameModel';
-import {mainAppSettings} from './App';
+import {vueRoot} from '@/client/components/vueRoot';
 
 import * as raw_settings from '@/genfiles/settings.json';
 import {SpectatorModel} from '@/common/models/SpectatorModel';
@@ -87,15 +87,16 @@ import PlanetaryTracks from '@/client/components/pathfinders/PlanetaryTracks.vue
 import DynamicTitle from '@/client/components/common/DynamicTitle.vue';
 import LogPanel from '@/client/components/LogPanel.vue';
 import MoonBoard from '@/client/components/moon/MoonBoard.vue';
-import Milestone from '@/client/components/Milestone.vue';
+import Milestone from '@/client/components/Milestones.vue';
 import Sidebar from '@/client/components/Sidebar.vue';
 import Turmoil from '@/client/components/turmoil/Turmoil.vue';
 import WaitingFor from '@/client/components/WaitingFor.vue';
 import PlayersOverview from '@/client/components/overview/PlayersOverview.vue';
 import {range} from '@/common/utils/utils';
+import {nextTileView, TileView} from './board/TileView';
 
 export interface SpectatorHomeModel {
-  hideTiles: boolean;
+  tileView: TileView;
   waitingForTimeout: number;
 }
 
@@ -103,7 +104,7 @@ export default Vue.extend({
   name: 'SpectatorHome',
   data(): SpectatorHomeModel {
     return {
-      hideTiles: false,
+      tileView: 'show',
       waitingForTimeout: this.settings.waitingForTimeout as typeof raw_settings.waitingForTimeout,
     };
   },
@@ -137,11 +138,13 @@ export default Vue.extend({
   methods: {
     forceRerender() {
       // TODO(kberg): this is very inefficient. It pulls down the entire state, ignoring the value of 'waitingFor' which only fetches a short state.
-      const root = this.$root as unknown as typeof mainAppSettings.methods;
-      root.updateSpectator();
+      vueRoot(this).updateSpectator();
     },
     range(n: number): Array<number> {
       return range(n);
+    },
+    cycleTileView(): void {
+      this.tileView = nextTileView(this.tileView);
     },
   },
 });

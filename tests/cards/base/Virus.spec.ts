@@ -1,21 +1,22 @@
 import {expect} from 'chai';
 import {cast} from '../../TestingUtils';
-import {Birds} from '../../../src/cards/base/Birds';
-import {Predators} from '../../../src/cards/base/Predators';
-import {Virus} from '../../../src/cards/base/Virus';
-import {Game} from '../../../src/Game';
-import {OrOptions} from '../../../src/inputs/OrOptions';
-import {Player} from '../../../src/Player';
-import {TestPlayers} from '../../TestPlayers';
+import {Birds} from '../../../src/server/cards/base/Birds';
+import {Predators} from '../../../src/server/cards/base/Predators';
+import {Virus} from '../../../src/server/cards/base/Virus';
+import {Game} from '../../../src/server/Game';
+import {OrOptions} from '../../../src/server/inputs/OrOptions';
+import {TestPlayer} from '../../TestPlayer';
+import {testGame} from '../../TestGame';
 
 describe('Virus', function() {
-  let card : Virus; let player : Player; let player2 : Player; let game : Game;
+  let card: Virus;
+  let player: TestPlayer;
+  let player2: TestPlayer;
+  let game: Game;
 
   beforeEach(function() {
     card = new Virus();
-    player = TestPlayers.BLUE.newPlayer();
-    player2 = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('gameid', [player, player2], player);
+    [game, player, player2] = testGame(2);
   });
 
   it('Should play', function() {

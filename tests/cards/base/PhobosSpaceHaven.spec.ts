@@ -1,19 +1,15 @@
 import {expect} from 'chai';
-import {PhobosSpaceHaven} from '../../../src/cards/base/PhobosSpaceHaven';
-import {Game} from '../../../src/Game';
-import {Resources} from '../../../src/common/Resources';
-import {TestPlayers} from '../../TestPlayers';
+import {PhobosSpaceHaven} from '../../../src/server/cards/base/PhobosSpaceHaven';
+import {testGame} from '../../TestGame';
 
 describe('PhobosSpaceHaven', function() {
   it('Should play', function() {
     const card = new PhobosSpaceHaven();
-    const player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    const game = Game.newInstance('gameid', [player, redPlayer], player);
+    const [game, player] = testGame(2);
     const action = card.play(player);
     expect(action).is.undefined;
-    expect(player.getProduction(Resources.TITANIUM)).to.eq(1);
-    expect(card.getVictoryPoints()).to.eq(3);
+    expect(player.production.titanium).to.eq(1);
+    expect(card.getVictoryPoints(player)).to.eq(3);
     expect(game.getCitiesCount()).to.eq(1);
   });
 });

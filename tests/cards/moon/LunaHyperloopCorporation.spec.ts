@@ -1,22 +1,18 @@
-import {Game} from '../../../src/Game';
-import {Player} from '../../../src/Player';
-import {setCustomGameOptions} from '../../TestingUtils';
-import {TestPlayers} from '../../TestPlayers';
-import {LunaHyperloopCorporation} from '../../../src/cards/moon/LunaHyperloopCorporation';
+import {Game} from '../../../src/server/Game';
+import {TestPlayer} from '../../TestPlayer';
+import {LunaHyperloopCorporation} from '../../../src/server/cards/moon/LunaHyperloopCorporation';
 import {expect} from 'chai';
-import {MoonExpansion} from '../../../src/moon/MoonExpansion';
-import {IMoonData} from '../../../src/moon/IMoonData';
-
-const MOON_OPTIONS = setCustomGameOptions({moonExpansion: true});
+import {MoonExpansion} from '../../../src/server/moon/MoonExpansion';
+import {IMoonData} from '../../../src/server/moon/IMoonData';
 
 describe('LunaHyperloopCorporation', () => {
-  let player: Player;
+  let player: TestPlayer;
   let card: LunaHyperloopCorporation;
   let moonData: IMoonData;
 
   beforeEach(() => {
-    player = TestPlayers.BLUE.newPlayer();
-    const game = Game.newInstance('gameid', [player], player, MOON_OPTIONS);
+    player = TestPlayer.BLUE.newPlayer();
+    const game = Game.newInstance('gameid', [player], player, {moonExpansion: true});
     card = new LunaHyperloopCorporation();
     moonData = MoonExpansion.moonData(game);
   });
@@ -39,12 +35,13 @@ describe('LunaHyperloopCorporation', () => {
     expect(player.megaCredits).eq(3);
 
     player.megaCredits = 0;
-    MoonExpansion.addColonyTile(player, spaces[3].id);
+    MoonExpansion.addHabitatTile(player, spaces[3].id);
     card.action(player);
     expect(player.megaCredits).eq(3);
   });
 
   it('victory points', () => {
+    player.playedCards.push(card);
     const spaces = moonData.moon.getAvailableSpacesOnLand(player);
     player.megaCredits = 0;
     MoonExpansion.addRoadTile(player, spaces[0].id);
@@ -62,7 +59,7 @@ describe('LunaHyperloopCorporation', () => {
     expect(card.getVictoryPoints(player)).eq(3);
 
     player.megaCredits = 0;
-    MoonExpansion.addColonyTile(player, spaces[3].id);
+    MoonExpansion.addHabitatTile(player, spaces[3].id);
     card.action(player);
     expect(card.getVictoryPoints(player)).eq(3);
   });

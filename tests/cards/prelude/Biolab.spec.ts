@@ -1,17 +1,16 @@
 import {expect} from 'chai';
-import {Biolab} from '../../../src/cards/prelude/Biolab';
-import {Game} from '../../../src/Game';
-import {Resources} from '../../../src/common/Resources';
-import {TestPlayers} from '../../TestPlayers';
+import {Biolab} from '../../../src/server/cards/prelude/Biolab';
+import {Game} from '../../../src/server/Game';
+import {testGame} from '../../TestGame';
 
 describe('Biolab', function() {
   it('Should play', function() {
     const card = new Biolab();
-    const player = TestPlayers.BLUE.newPlayer();
+    const [, player] = testGame(1);
     Game.newInstance('gameid', [player], player);
     card.play(player);
 
-    expect(player.getProduction(Resources.PLANTS)).to.eq(1);
+    expect(player.production.plants).to.eq(1);
     expect(player.cardsInHand).has.lengthOf(3);
   });
 });

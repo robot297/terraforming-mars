@@ -29,7 +29,8 @@ export const ENERGY_TRADE_COST = 3;
 export const TITANIUM_TRADE_COST = 3;
 
 // Turmoil
-export const PLAYER_DELEGATES_COUNT = 7;
+export const DELEGATES_PER_PLAYER = 7;
+export const DELEGATES_FOR_NEUTRAL_PLAYER = 14;
 export const REDS_RULING_POLICY_COST = 3;
 export const POLITICAL_AGENDAS_MAX_ACTION_USES = 3;
 
@@ -38,7 +39,7 @@ export const HELLAS_BONUS_OCEAN_COST = 6;
 export const VASTITAS_BOREALIS_BONUS_TEMPERATURE_COST = 3;
 
 // Moon
-export const MAXIMUM_COLONY_RATE = 8;
+export const MAXIMUM_HABITAT_RATE = 8;
 export const MAXIMUM_MINING_RATE = 8;
 export const MAXIMUM_LOGISTICS_RATE = 8;
 
@@ -52,18 +53,25 @@ export const DEFAULT_ESCAPE_VELOCITY_THRESHOLD = 30;
 export const DEFAULT_ESCAPE_VELOCITY_PERIOD = 2;
 export const DEFAULT_ESCAPE_VELOCITY_PENALTY = 1;
 
-export const LANGUAGES = [
-  {'id': 'en', 'title': 'English'},
-  {'id': 'de', 'title': 'German'},
-  {'id': 'fr', 'title': 'French'},
-  {'id': 'ru', 'title': 'Russian'},
-  {'id': 'cn', 'title': 'Chinese'},
-  {'id': 'pl', 'title': 'Polish'},
-  {'id': 'es', 'title': 'Spanish'},
-  {'id': 'br', 'title': 'Português Brasileiro'},
-  {'id': 'it', 'title': 'Italian'},
-  {'id': 'ko', 'title': '한국어 (Korean)'},
-];
+// Leaders/CEOs
+export const ASIMOV_AWARD_BONUS = 2;
+
+export const ALL_LANGUAGES = ['en', 'de', 'fr', 'ru', 'cn', 'pl', 'es', 'br', 'it', 'ko', 'nl'] as const;
+
+export const LANGUAGES: Record<typeof ALL_LANGUAGES[number], string> = {
+  en: 'English',
+  de: 'Deutsch',
+  fr: 'Français',
+  ru: 'Русский',
+  cn: '华语',
+  pl: 'Polski',
+  es: 'Español',
+  br: 'Português Brasileiro',
+  it: 'Italiano',
+  ko: '한국어',
+  nl: 'Nederlands',
+};
 
 export const APP_NAME = 'Terraforming Mars';
 export const DISCORD_INVITE = 'https://discord.gg/afeyggbN6Y';
+export const PRELUDE_CARDS_DEALT_PER_PLAYER = 4;

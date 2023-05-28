@@ -1,29 +1,27 @@
-import {Game} from '../../../src/Game';
-import {Player} from '../../../src/Player';
-import {setCustomGameOptions} from '../../TestingUtils';
-import {TestPlayers} from '../../TestPlayers';
-import {IntragenSanctuaryHeadquarters} from '../../../src/cards/moon/IntragenSanctuaryHeadquarters';
+import {Game} from '../../../src/server/Game';
+import {runAllActions} from '../../TestingUtils';
+import {TestPlayer} from '../../TestPlayer';
+import {IntragenSanctuaryHeadquarters} from '../../../src/server/cards/moon/IntragenSanctuaryHeadquarters';
 import {expect} from 'chai';
-import {MicroMills} from '../../../src/cards/base/MicroMills';
-import {MartianZoo} from '../../../src/cards/colonies/MartianZoo';
-
-const MOON_OPTIONS = setCustomGameOptions({moonExpansion: true});
+import {MicroMills} from '../../../src/server/cards/base/MicroMills';
+import {MartianZoo} from '../../../src/server/cards/colonies/MartianZoo';
 
 describe('IntragenSanctuaryHeadquarters', () => {
-  let player: Player;
-  let player2: Player;
+  let player: TestPlayer;
+  let player2: TestPlayer;
   let card: IntragenSanctuaryHeadquarters;
 
   beforeEach(() => {
-    player = TestPlayers.BLUE.newPlayer();
-    player2 = TestPlayers.RED.newPlayer();
-    Game.newInstance('gameid', [player, player2], player, MOON_OPTIONS);
+    player = TestPlayer.BLUE.newPlayer();
+    player2 = TestPlayer.RED.newPlayer();
+    Game.newInstance('gameid', [player, player2], player, {moonExpansion: true});
     card = new IntragenSanctuaryHeadquarters();
   });
 
   it('on play', () => {
     expect(card.resourceCount).eq(0);
-    card.play();
+    card.play(player);
+    runAllActions(player.game);
     expect(card.resourceCount).eq(1);
   });
 
@@ -42,19 +40,19 @@ describe('IntragenSanctuaryHeadquarters', () => {
 
   it('victory points', () => {
     card.resourceCount = 0;
-    expect(card.getVictoryPoints()).eq(0);
+    expect(card.getVictoryPoints(player)).eq(0);
 
     card.resourceCount = 1;
-    expect(card.getVictoryPoints()).eq(0);
+    expect(card.getVictoryPoints(player)).eq(0);
 
     card.resourceCount = 2;
-    expect(card.getVictoryPoints()).eq(1);
+    expect(card.getVictoryPoints(player)).eq(1);
 
     card.resourceCount = 3;
-    expect(card.getVictoryPoints()).eq(1);
+    expect(card.getVictoryPoints(player)).eq(1);
 
     card.resourceCount = 4;
-    expect(card.getVictoryPoints()).eq(2);
+    expect(card.getVictoryPoints(player)).eq(2);
   });
 
 

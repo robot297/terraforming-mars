@@ -1,28 +1,26 @@
 import {expect} from 'chai';
-import {CometAiming} from '../../../src/cards/promo/CometAiming';
-import {RotatorImpacts} from '../../../src/cards/venusNext/RotatorImpacts';
-import {Game} from '../../../src/Game';
-import {OrOptions} from '../../../src/inputs/OrOptions';
-import {SelectSpace} from '../../../src/inputs/SelectSpace';
-import {Player} from '../../../src/Player';
-import {TestPlayers} from '../../TestPlayers';
+import {CometAiming} from '../../../src/server/cards/promo/CometAiming';
+import {RotatorImpacts} from '../../../src/server/cards/venusNext/RotatorImpacts';
+import {testGame} from '../../TestGame';
+import {OrOptions} from '../../../src/server/inputs/OrOptions';
+import {SelectSpace} from '../../../src/server/inputs/SelectSpace';
+import {TestPlayer} from '../../TestPlayer';
 import {cast, maxOutOceans} from '../../TestingUtils';
 
 describe('CometAiming', function() {
-  let card : CometAiming; let player : Player;
+  let card: CometAiming;
+  let player: TestPlayer;
 
   beforeEach(function() {
     card = new CometAiming();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    Game.newInstance('gameid', [player, redPlayer], player);
+    [/* skipped */, player] = testGame(2);
   });
 
   it('Should play', function() {
-    expect(card.play()).is.undefined;
+    expect(card.play(player)).is.undefined;
   });
 
-  it('Can\'t act', function() {
+  it('Can not act', function() {
     player.playedCards.push(card);
     expect(card.canAct(player)).is.not.true;
   });
@@ -38,7 +36,7 @@ describe('CometAiming', function() {
 
     card.action(player);
     expect(player.game.deferredActions).has.lengthOf(1);
-    const selectSpace = player.game.deferredActions.peek()!.execute() as SelectSpace;
+    const selectSpace = cast(player.game.deferredActions.peek()!.execute(), SelectSpace);
     selectSpace.cb(selectSpace.availableSpaces[0]);
     expect(player.getTerraformRating()).to.eq(21);
   });

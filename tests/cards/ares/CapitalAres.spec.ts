@@ -1,24 +1,23 @@
 import {expect} from 'chai';
-import {CapitalAres} from '../../../src/cards/ares/CapitalAres';
+import {CapitalAres} from '../../../src/server/cards/ares/CapitalAres';
 import {TestPlayer} from '../../TestPlayer';
-import {Game} from '../../../src/Game';
+import {Game} from '../../../src/server/Game';
 import {SpaceType} from '../../../src/common/boards/SpaceType';
-import {SelectSpace} from '../../../src/inputs/SelectSpace';
-import {Resources} from '../../../src/common/Resources';
+import {SelectSpace} from '../../../src/server/inputs/SelectSpace';
+import {Resource} from '../../../src/common/Resource';
 import {TileType} from '../../../src/common/TileType';
 import {SpaceBonus} from '../../../src/common/boards/SpaceBonus';
-import {ARES_OPTIONS_NO_HAZARDS} from '../../ares/AresTestHelper';
-import {TestPlayers} from '../../TestPlayers';
-import {cast} from '../../TestingUtils';
+import {cast, runAllActions} from '../../TestingUtils';
+import {testGame} from '../../TestGame';
 
 describe('CapitalAres', function() {
-  let card : CapitalAres; let player : TestPlayer; let game : Game;
+  let card: CapitalAres;
+  let player: TestPlayer;
+  let game: Game;
 
   beforeEach(function() {
     card = new CapitalAres();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('gameid', [player, redPlayer], player, ARES_OPTIONS_NO_HAZARDS);
+    [game, player] = testGame(2, {aresExtension: true});
   });
 
   it('Should play', function() {
@@ -26,12 +25,14 @@ describe('CapitalAres', function() {
     for (let i = 0; i < 4; i++) {
       oceanSpaces[i].tile = {tileType: TileType.OCEAN};
     }
-    player.addProduction(Resources.ENERGY, 2);
+    player.production.add(Resource.ENERGY, 2);
     expect(card.canPlay(player)).is.true;
 
-    const action = cast(card.play(player), SelectSpace);
-    expect(player.getProduction(Resources.ENERGY)).to.eq(0);
-    expect(player.getProduction(Resources.MEGACREDITS)).to.eq(5);
+    card.play(player);
+    runAllActions(game);
+    const action = cast(player.popWaitingFor(), SelectSpace);
+    expect(player.production.energy).to.eq(0);
+    expect(player.production.megacredits).to.eq(5);
 
     const citySpace = game.board.getAdjacentSpaces(oceanSpaces[0])[1];
     expect(citySpace.spaceType).to.eq(SpaceType.LAND);

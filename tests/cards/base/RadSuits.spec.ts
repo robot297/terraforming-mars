@@ -1,33 +1,32 @@
 import {expect} from 'chai';
-import {RadSuits} from '../../../src/cards/base/RadSuits';
-import {Game} from '../../../src/Game';
+import {RadSuits} from '../../../src/server/cards/base/RadSuits';
+import {Game} from '../../../src/server/Game';
 import {TestPlayer} from '../../TestPlayer';
-import {Resources} from '../../../src/common/Resources';
-import {TestPlayers} from '../../TestPlayers';
+import {testGame} from '../../TestGame';
 
 describe('RadSuits', function() {
-  let card : RadSuits; let player : TestPlayer; let game : Game;
+  let card: RadSuits;
+  let player: TestPlayer;
+  let game: Game;
 
   beforeEach(function() {
     card = new RadSuits();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('gameid', [player, redPlayer], player);
+    [game, player] = testGame(2);
   });
 
-  it('Can\'t play', function() {
-    expect(player.canPlayIgnoringCost(card)).is.not.true;
+  it('Can not play', function() {
+    expect(player.simpleCanPlay(card)).is.not.true;
   });
 
   it('Should play', function() {
     const lands = game.board.getAvailableSpacesOnLand(player);
-    game.addCityTile(player, lands[0].id);
-    game.addCityTile(player, lands[1].id);
+    game.addCity(player, lands[0]);
+    game.addCity(player, lands[1]);
 
-    expect(player.canPlayIgnoringCost(card)).is.true;
+    expect(player.simpleCanPlay(card)).is.true;
     card.play(player);
 
-    expect(player.getProduction(Resources.MEGACREDITS)).to.eq(1);
-    expect(card.getVictoryPoints()).to.eq(1);
+    expect(player.production.megacredits).to.eq(1);
+    expect(card.getVictoryPoints(player)).to.eq(1);
   });
 });

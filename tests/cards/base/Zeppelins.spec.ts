@@ -1,33 +1,33 @@
 import {expect} from 'chai';
-import {Zeppelins} from '../../../src/cards/base/Zeppelins';
-import {Game} from '../../../src/Game';
+import {setOxygenLevel} from '../../TestingUtils';
+import {Zeppelins} from '../../../src/server/cards/base/Zeppelins';
+import {Game} from '../../../src/server/Game';
 import {TestPlayer} from '../../TestPlayer';
-import {Resources} from '../../../src/common/Resources';
-import {TestPlayers} from '../../TestPlayers';
+import {testGame} from '../../TestGame';
 
 describe('Zeppelins', function() {
-  let card : Zeppelins; let player : TestPlayer; let game : Game;
+  let card: Zeppelins;
+  let player: TestPlayer;
+  let game: Game;
 
   beforeEach(function() {
     card = new Zeppelins();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('gameid', [player, redPlayer], player);
+    [game, player] = testGame(2);
   });
 
-  it('Can\'t play', function() {
-    (game as any).oxygenLevel = 4;
-    expect(player.canPlayIgnoringCost(card)).is.not.true;
+  it('Can not play', function() {
+    setOxygenLevel(game, 4);
+    expect(player.simpleCanPlay(card)).is.not.true;
   });
   it('Should play', function() {
-    (game as any).oxygenLevel = 5;
-    expect(player.canPlayIgnoringCost(card)).is.true;
+    setOxygenLevel(game, 5);
+    expect(player.simpleCanPlay(card)).is.true;
 
     const lands = game.board.getAvailableSpacesOnLand(player);
-    game.addCityTile(player, lands[0].id);
+    game.addCity(player, lands[0]);
 
     card.play(player);
-    expect(player.getProduction(Resources.MEGACREDITS)).to.eq(1);
-    expect(card.getVictoryPoints()).to.eq(1);
+    expect(player.production.megacredits).to.eq(1);
+    expect(card.getVictoryPoints(player)).to.eq(1);
   });
 });

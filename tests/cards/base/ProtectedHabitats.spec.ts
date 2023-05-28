@@ -1,14 +1,11 @@
 import {expect} from 'chai';
-import {ProtectedHabitats} from '../../../src/cards/base/ProtectedHabitats';
-import {Game} from '../../../src/Game';
-import {TestPlayers} from '../../TestPlayers';
+import {ProtectedHabitats} from '../../../src/server/cards/base/ProtectedHabitats';
+import {testGame} from '../../TestGame';
 
 describe('ProtectedHabitats', function() {
   it('Should play', function() {
     const card = new ProtectedHabitats();
-    const player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    Game.newInstance('gameid', [player, redPlayer], player);
+    const [, player] = testGame(2);
     expect(card.play(player)).is.undefined;
   });
 });

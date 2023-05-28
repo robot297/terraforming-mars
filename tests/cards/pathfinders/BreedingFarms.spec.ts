@@ -1,9 +1,8 @@
 import {expect} from 'chai';
-import {BreedingFarms} from '../../../src/cards/pathfinders/BreedingFarms';
-import {Fish} from '../../../src/cards/base/Fish';
-import {Game} from '../../../src/Game';
+import {BreedingFarms} from '../../../src/server/cards/pathfinders/BreedingFarms';
+import {Fish} from '../../../src/server/cards/base/Fish';
+import {Game} from '../../../src/server/Game';
 import {TestPlayer} from '../../TestPlayer';
-import {TestPlayers} from '../../TestPlayers';
 import {runAllActions} from '../../TestingUtils';
 
 describe('BreedingFarms', function() {
@@ -13,24 +12,25 @@ describe('BreedingFarms', function() {
 
   beforeEach(function() {
     card = new BreedingFarms();
-    player = TestPlayers.BLUE.newPlayer();
+    player = TestPlayer.BLUE.newPlayer();
     Game.newInstance('gameid', [player], player);
     player.playedCards.push(card);
     fish = new Fish();
+    player.popWaitingFor();
   });
 
   it('canPlay', function() {
     player.tagsForTest = {};
-    expect(player.canPlayIgnoringCost(card)).is.false;
+    expect(player.simpleCanPlay(card)).is.false;
 
     player.tagsForTest = {science: 1};
-    expect(player.canPlayIgnoringCost(card)).is.false;
+    expect(player.simpleCanPlay(card)).is.false;
 
     player.tagsForTest = {animal: 1};
-    expect(player.canPlayIgnoringCost(card)).is.false;
+    expect(player.simpleCanPlay(card)).is.false;
 
     player.tagsForTest = {science: 1, animal: 1};
-    expect(player.canPlayIgnoringCost(card)).is.true;
+    expect(player.simpleCanPlay(card)).is.true;
   });
 
   it('play', function() {

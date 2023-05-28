@@ -1,8 +1,7 @@
 import {expect} from 'chai';
-import {FlatMarsTheory} from '../../../src/cards/pathfinders/FlatMarsTheory';
-import {Game} from '../../../src/Game';
+import {FlatMarsTheory} from '../../../src/server/cards/pathfinders/FlatMarsTheory';
+import {Game} from '../../../src/server/Game';
 import {TestPlayer} from '../../TestPlayer';
-import {TestPlayers} from '../../TestPlayers';
 import {Units} from '../../../src/common/Units';
 
 describe('FlatMarsTheory', function() {
@@ -12,35 +11,35 @@ describe('FlatMarsTheory', function() {
 
   beforeEach(function() {
     card = new FlatMarsTheory();
-    player = TestPlayers.BLUE.newPlayer();
+    player = TestPlayer.BLUE.newPlayer();
     game = Game.newInstance('gameid', [player], player);
   });
 
   it('canPlay', function() {
     player.tagsForTest = {};
-    expect(player.canPlayIgnoringCost(card)).is.true;
+    expect(player.simpleCanPlay(card)).is.true;
 
     player.tagsForTest = {science: 1};
-    expect(player.canPlayIgnoringCost(card)).is.true;
+    expect(player.simpleCanPlay(card)).is.true;
 
     player.tagsForTest = {science: 2};
-    expect(player.canPlayIgnoringCost(card)).is.false;
+    expect(player.simpleCanPlay(card)).is.false;
 
     player.tagsForTest = {science: 1, wild: 1};
-    expect(player.canPlayIgnoringCost(card)).is.true;
+    expect(player.simpleCanPlay(card)).is.true;
 
     player.tagsForTest = {wild: 2};
-    expect(player.canPlayIgnoringCost(card)).is.true;
+    expect(player.simpleCanPlay(card)).is.true;
   });
 
   it('play', function() {
     (game as any).generation = 4;
     card.play(player);
-    expect(player.getProductionForTest()).deep.eq(Units.of({megacredits: 4}));
+    expect(player.production.asUnits()).deep.eq(Units.of({megacredits: 4}));
 
-    player.setProductionForTest(Units.EMPTY);
+    player.production.override(Units.EMPTY);
     (game as any).generation = 7;
     card.play(player);
-    expect(player.getProductionForTest()).deep.eq(Units.of({megacredits: 7}));
+    expect(player.production.asUnits()).deep.eq(Units.of({megacredits: 7}));
   });
 });

@@ -1,32 +1,32 @@
 import {expect} from 'chai';
-import {Trees} from '../../../src/cards/base/Trees';
-import {Game} from '../../../src/Game';
+import {setTemperature} from '../../TestingUtils';
+import {Trees} from '../../../src/server/cards/base/Trees';
+import {Game} from '../../../src/server/Game';
 import {TestPlayer} from '../../TestPlayer';
-import {Resources} from '../../../src/common/Resources';
-import {TestPlayers} from '../../TestPlayers';
+import {testGame} from '../../TestGame';
 
 describe('Trees', function() {
-  let card : Trees; let player : TestPlayer; let game : Game;
+  let card: Trees;
+  let player: TestPlayer;
+  let game: Game;
 
   beforeEach(function() {
     card = new Trees();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('gameid', [player, redPlayer], player);
+    [game, player] = testGame(2);
   });
 
-  it('Can\'t play', function() {
-    expect(player.canPlayIgnoringCost(card)).is.not.true;
+  it('Can not play', function() {
+    expect(player.simpleCanPlay(card)).is.not.true;
   });
 
   it('Should play', function() {
-    (game as any).temperature = -4;
-    expect(player.canPlayIgnoringCost(card)).is.true;
+    setTemperature(game, -4);
+    expect(player.simpleCanPlay(card)).is.true;
 
     card.play(player);
-    expect(player.getProduction(Resources.PLANTS)).to.eq(3);
+    expect(player.production.plants).to.eq(3);
     expect(player.plants).to.eq(1);
 
-    expect(card.getVictoryPoints()).to.eq(1);
+    expect(card.getVictoryPoints(player)).to.eq(1);
   });
 });

@@ -1,30 +1,31 @@
 import {expect} from 'chai';
-import {Player} from '../../../src/Player';
-import {Game} from '../../../src/Game';
+import {Game} from '../../../src/server/Game';
 import {TileType} from '../../../src/common/TileType';
-import {resetBoard} from '../../TestingUtils';
-import {TestPlayers} from '../../TestPlayers';
-import {LavaFlowsAres} from '../../../src/cards/ares/LavaFlowsAres';
+import {cast, resetBoard, runAllActions} from '../../TestingUtils';
+import {TestPlayer} from '../../TestPlayer';
+import {LavaFlowsAres} from '../../../src/server/cards/ares/LavaFlowsAres';
 import {SpaceBonus} from '../../../src/common/boards/SpaceBonus';
-import {ARES_OPTIONS_NO_HAZARDS} from '../../ares/AresTestHelper';
+import {SelectSpace} from '../../../src/server/inputs/SelectSpace';
+import {testGame} from '../../TestGame';
 
 describe('LavaFlowsAres', function() {
-  let card : LavaFlowsAres; let player : Player; let game : Game;
+  let card: LavaFlowsAres;
+  let player: TestPlayer;
+  let game: Game;
 
   beforeEach(function() {
     card = new LavaFlowsAres();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('gameid', [player, redPlayer], player, ARES_OPTIONS_NO_HAZARDS);
+    [game, player] = testGame(2, {aresExtension: true});
     resetBoard(game);
   });
 
   it('Should play', function() {
-    const action = card.play(player);
-    expect(action).is.not.undefined;
-
+    card.play(player);
+    runAllActions(game);
+    const action = cast(player.popWaitingFor(), SelectSpace);
     const space = action.availableSpaces[0];
     action.cb(space);
+
     expect(space.tile && space.tile.tileType).to.eq(TileType.LAVA_FLOWS);
     expect(space.player).to.eq(player);
     expect(game.getTemperature()).to.eq(-26);

@@ -1,21 +1,19 @@
 import {expect} from 'chai';
-import {Birds} from '../../../src/cards/base/Birds';
-import {EarthOffice} from '../../../src/cards/base/EarthOffice';
-import {LunaGovernor} from '../../../src/cards/colonies/LunaGovernor';
-import {Game} from '../../../src/Game';
-import {Player} from '../../../src/Player';
-import {TestPlayers} from '../../TestPlayers';
+import {testGame} from '../../TestGame';
+import {Birds} from '../../../src/server/cards/base/Birds';
+import {EarthOffice} from '../../../src/server/cards/base/EarthOffice';
+import {LunaGovernor} from '../../../src/server/cards/colonies/LunaGovernor';
+import {TestPlayer} from '../../TestPlayer';
 
 describe('EarthOffice', function() {
-  let card : EarthOffice; let player : Player;
+  let card: EarthOffice;
+  let player: TestPlayer;
 
   beforeEach(function() {
     card = new EarthOffice();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    Game.newInstance('gameid', [player, redPlayer], player);
+    [/* skipped */, player] = testGame(2);
 
-    const action = card.play();
+    const action = card.play(player);
     expect(action).is.undefined;
   });
 

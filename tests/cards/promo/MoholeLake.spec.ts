@@ -1,29 +1,28 @@
 import {expect} from 'chai';
-import {Ants} from '../../../src/cards/base/Ants';
-import {Fish} from '../../../src/cards/base/Fish';
-import {ICard} from '../../../src/cards/ICard';
-import {MoholeLake} from '../../../src/cards/promo/MoholeLake';
-import {Game} from '../../../src/Game';
-import {SelectCard} from '../../../src/inputs/SelectCard';
-import {SelectSpace} from '../../../src/inputs/SelectSpace';
-import {Player} from '../../../src/Player';
-import {TestPlayers} from '../../TestPlayers';
+import {cast, churnAction} from '../../TestingUtils';
+import {Ants} from '../../../src/server/cards/base/Ants';
+import {Fish} from '../../../src/server/cards/base/Fish';
+import {ICard} from '../../../src/server/cards/ICard';
+import {MoholeLake} from '../../../src/server/cards/promo/MoholeLake';
+import {SelectCard} from '../../../src/server/inputs/SelectCard';
+import {SelectSpace} from '../../../src/server/inputs/SelectSpace';
+import {TestPlayer} from '../../TestPlayer';
+import {testGame} from '../../TestGame';
 
 describe('MoholeLake', function() {
-  let card : MoholeLake; let player : Player;
+  let card: MoholeLake;
+  let player: TestPlayer;
 
   beforeEach(function() {
     card = new MoholeLake();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    Game.newInstance('gameid', [player, redPlayer], player);
+    [/* skipped */, player] = testGame(2);
   });
 
   it('Can play', function() {
     card.play(player);
 
     expect(player.game.deferredActions).has.lengthOf(1);
-    const selectSpace = player.game.deferredActions.peek()!.execute() as SelectSpace;
+    const selectSpace = cast(player.game.deferredActions.peek()!.execute(), SelectSpace);
     selectSpace.cb(selectSpace.availableSpaces[0]);
 
     expect(player.game.getTemperature()).to.eq(-28);
@@ -34,7 +33,7 @@ describe('MoholeLake', function() {
 
   it('Can act - no target', function() {
     expect(card.canAct()).is.true;
-    expect(card.action(player)).is.undefined;
+    expect(churnAction(card, player)).is.undefined;
   });
 
   it('Can act - single target', function() {
@@ -54,7 +53,7 @@ describe('MoholeLake', function() {
 
     card.play(player);
     expect(card.canAct()).is.true;
-    const action = card.action(player) as SelectCard<ICard>;
+    const action = cast(card.action(player), SelectCard<ICard>);
 
     action.cb([ants]);
     expect(ants.resourceCount).to.eq(1);

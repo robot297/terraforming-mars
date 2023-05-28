@@ -1,19 +1,19 @@
 import {expect} from 'chai';
-import {InventorsGuild} from '../../../src/cards/base/InventorsGuild';
-import {IProjectCard} from '../../../src/cards/IProjectCard';
-import {Game} from '../../../src/Game';
-import {SelectCard} from '../../../src/inputs/SelectCard';
-import {Player} from '../../../src/Player';
-import {TestPlayers} from '../../TestPlayers';
+import {churnAction, cast} from '../../TestingUtils';
+import {InventorsGuild} from '../../../src/server/cards/base/InventorsGuild';
+import {Game} from '../../../src/server/Game';
+import {SelectCard} from '../../../src/server/inputs/SelectCard';
+import {TestPlayer} from '../../TestPlayer';
+import {testGame} from '../../TestGame';
 
 describe('InventorsGuild', function() {
-  let card : InventorsGuild; let player : Player; let game : Game;
+  let card: InventorsGuild;
+  let player: TestPlayer;
+  let game: Game;
 
   beforeEach(function() {
     card = new InventorsGuild();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('gameid', [player, redPlayer], player);
+    [game, player] = testGame(2);
   });
 
   it('Should play', function() {
@@ -23,15 +23,14 @@ describe('InventorsGuild', function() {
 
   it('Should act', function() {
     player.megaCredits = 3;
-    const action = card.action(player);
-    expect(action).instanceOf(SelectCard);
-    (action! as SelectCard<IProjectCard>).cb([]);
+    const selectCard = cast(churnAction(card, player), SelectCard);
+    selectCard.cb([]);
 
-    expect(game.dealer.discarded).has.lengthOf(1);
+    expect(game.projectDeck.discardPile).has.lengthOf(1);
     expect(player.megaCredits).to.eq(3);
     player.megaCredits = 3;
 
-    (action as SelectCard<IProjectCard>).cb([(action as SelectCard<IProjectCard>).cards[0]]);
+    selectCard.cb([selectCard.cards[0]]);
     game.deferredActions.runNext();
     expect(player.megaCredits).to.eq(0);
     expect(player.cardsInHand).has.lengthOf(1);
@@ -39,11 +38,11 @@ describe('InventorsGuild', function() {
 
   it('Cannot buy card if cannot pay', function() {
     player.megaCredits = 2;
-    const selectCard = card.action(player) as SelectCard<IProjectCard>;
+    const selectCard = cast(churnAction(card, player), SelectCard);
     expect(selectCard.config.max).to.eq(0);
     selectCard.cb([]);
     expect(game.deferredActions).has.lengthOf(0);
-    expect(game.dealer.discarded).has.lengthOf(1);
+    expect(game.projectDeck.discardPile).has.lengthOf(1);
     expect(player.cardsInHand).has.lengthOf(0);
     expect(player.megaCredits).to.eq(2);
   });

@@ -1,28 +1,28 @@
 import {expect} from 'chai';
-import {PermafrostExtraction} from '../../../src/cards/base/PermafrostExtraction';
-import {Game} from '../../../src/Game';
-import {Player} from '../../../src/Player';
-import {TestPlayers} from '../../TestPlayers';
-import {SelectSpace} from '../../../src/inputs/SelectSpace';
-import {runAllActions, cast} from '../../TestingUtils';
+import {PermafrostExtraction} from '../../../src/server/cards/base/PermafrostExtraction';
+import {Game} from '../../../src/server/Game';
+import {TestPlayer} from '../../TestPlayer';
+import {SelectSpace} from '../../../src/server/inputs/SelectSpace';
+import {runAllActions, cast, setTemperature} from '../../TestingUtils';
+import {testGame} from '../../TestGame';
 
 describe('PermafrostExtraction', function() {
-  let card : PermafrostExtraction; let player : Player; let game : Game;
+  let card: PermafrostExtraction;
+  let player: TestPlayer;
+  let game: Game;
 
   beforeEach(function() {
     card = new PermafrostExtraction();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('gameid', [player, redPlayer], player);
+    [game, player] = testGame(2);
   });
 
   it('Cannot play', function() {
-    expect(player.canPlayIgnoringCost(card)).is.not.true;
+    expect(player.simpleCanPlay(card)).is.not.true;
   });
 
   it('Should play', function() {
-    (game as any).temperature = -8;
-    expect(player.canPlayIgnoringCost(card)).is.true;
+    setTemperature(game, -8);
+    expect(player.simpleCanPlay(card)).is.true;
 
     const action = card.play(player);
     expect(action).is.undefined;

@@ -7,7 +7,7 @@
               <CardTags :tags="getTags()" />
           </div>
           <CardTitle :title="card.name" :type="getCardType()"/>
-          <CardContent v-if="getCardMetadata() !== undefined" :metadata="getCardMetadata()" :requirements="getCardRequirements()" :isCorporation="isCorporationCard()"/>
+          <CardContent v-if="getCardMetadata() !== undefined" :metadata="getCardMetadata()" :requirements="getCardRequirements()" :isCorporation="isCorporationCard()" :padBottom="hasResourceType" />
       </div>
       <CardExpansion :expansion="getCardExpansion()" :isCorporation="isCorporationCard()"/>
       <CardResourceCounter v-if="hasResourceType" :amount="getResourceAmount()" :type="resourceType" />
@@ -32,15 +32,14 @@ import CardContent from './CardContent.vue';
 import CardHelp from './CardHelp.vue';
 import {ICardMetadata} from '@/common/cards/ICardMetadata';
 import {ICardRequirements} from '@/common/cards/ICardRequirements';
-import {Tags} from '@/common/cards/Tags';
+import {Tag} from '@/common/cards/Tag';
 import {getPreferences} from '@/client/utils/PreferencesManager';
 import {CardResource} from '@/common/CardResource';
 import {getCardOrThrow} from '@/client/cards/ClientCardManifest';
 import {CardName} from '@/common/cards/CardName';
 
-const names = [
+const CARDS_WITH_EXTERNAL_DOCUMENTATION = [
   CardName.BOTANICAL_EXPERIENCE,
-  CardName.MARS_DIRECT,
   CardName.LUNA_ECUMENOPOLIS,
   CardName.ROBOTIC_WORKFORCE,
 ];
@@ -90,27 +89,23 @@ export default Vue.extend({
       tags.forEach((tag, idx) => {
         // Clone are changed on card implementations but that's not passed down directly through the
         // model, however, it sends down the `cloneTag` field. So this function does the substitution.
-        if (tag === Tags.CLONE && this.card.cloneTag !== undefined) {
+        if (tag === Tag.CLONE && this.card.cloneTag !== undefined) {
           tags[idx] = this.card.cloneTag;
         }
       });
       if (type === CardType.EVENT) {
-        tags.push(Tags.EVENT);
+        tags.push(Tag.EVENT);
       }
       return tags;
     },
     getCost(): number | undefined {
-      const cost = this.cardInstance.cost;
-      const type = this.getCardType();
-      return cost === undefined || type === CardType.PRELUDE || type === CardType.CORPORATION ? undefined : cost;
+      return this.isProjectCard() ? this.cardInstance.cost : undefined;
     },
     getReducedCost(): number | undefined {
-      const cost = this.card.calculatedCost;
-      const type = this.getCardType();
-      return cost === undefined || type === CardType.PRELUDE || type === CardType.CORPORATION ? undefined : cost;
+      return this.isProjectCard() ? this.card.calculatedCost : undefined;
     },
     getCardType(): CardType {
-      return this.cardInstance.cardType;
+      return this.cardInstance.type;
     },
     getCardClasses(card: CardModel): string {
       const classes = ['card-container', 'filterDiv', 'hover-hide-res'];
@@ -128,8 +123,7 @@ export default Vue.extend({
       }
       return classes.join(' ');
     },
-    getCardMetadata(): ICardMetadata | undefined {
-      // TODO(kberg): This doesn't return undefined anymore.
+    getCardMetadata(): ICardMetadata {
       return this.cardInstance.metadata;
     },
     getCardRequirements(): ICardRequirements | undefined {
@@ -141,24 +135,25 @@ export default Vue.extend({
     isCorporationCard() : boolean {
       return this.getCardType() === CardType.CORPORATION;
     },
+    isProjectCard(): boolean {
+      const type = this.getCardType();
+      return type !== CardType.PRELUDE && type !== CardType.CORPORATION && type !== CardType.CEO;
+    },
     isStandardProject() : boolean {
       return this.getCardType() === CardType.STANDARD_PROJECT || this.getCardType() === CardType.STANDARD_ACTION;
     },
   },
   computed: {
     hasResourceType(): boolean {
-      return this.card.resourceType !== undefined ||
-        this.cardInstance.resourceType !== undefined ||
-        this.robotCard !== undefined;
+      return this.card.isSelfReplicatingRobotsCard === true || this.cardInstance.resourceType !== undefined || this.robotCard !== undefined;
     },
     resourceType(): CardResource {
-      if (this.robotCard !== undefined) return CardResource.RESOURCE_CUBE;
-      if (this.card.resourceType !== undefined) return this.card.resourceType;
-      if (this.cardInstance.resourceType !== undefined) return this.cardInstance.resourceType;
-      return CardResource.RESOURCE_CUBE;
+      if (this.robotCard !== undefined || this.card.isSelfReplicatingRobotsCard === true) return CardResource.RESOURCE_CUBE;
+      // This last RESOURCE_CUBE is functionally unnecessary and serves to satisfy the type contract.
+      return this.cardInstance.resourceType ?? CardResource.RESOURCE_CUBE;
     },
     hasHelp(): boolean {
-      return names.includes(this.card.name) && getPreferences().experimental_ui;
+      return CARDS_WITH_EXTERNAL_DOCUMENTATION.includes(this.card.name) && getPreferences().experimental_ui;
     },
   },
 });

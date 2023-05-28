@@ -1,30 +1,30 @@
 import {expect} from 'chai';
-import {cast} from '../../TestingUtils';
-import {SulphurEatingBacteria} from '../../../src/cards/venusNext/SulphurEatingBacteria';
-import {Game} from '../../../src/Game';
-import {OrOptions} from '../../../src/inputs/OrOptions';
-import {Player} from '../../../src/Player';
-import {TestPlayers} from '../../TestPlayers';
+import {cast, setVenusScaleLevel} from '../../TestingUtils';
+import {SulphurEatingBacteria} from '../../../src/server/cards/venusNext/SulphurEatingBacteria';
+import {Game} from '../../../src/server/Game';
+import {OrOptions} from '../../../src/server/inputs/OrOptions';
+import {TestPlayer} from '../../TestPlayer';
+import {testGame} from '../../TestGame';
 
 describe('SulphurEatingBacteria', function() {
-  let card : SulphurEatingBacteria; let player : Player; let game : Game;
+  let card: SulphurEatingBacteria;
+  let player: TestPlayer;
+  let game: Game;
 
   beforeEach(function() {
     card = new SulphurEatingBacteria();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('gameid', [player, redPlayer], player);
+    [game, player] = testGame(2);
   });
 
-  it('Can\'t play', function() {
-    (game as any).venusScaleLevel = 4;
-    expect(player.canPlayIgnoringCost(card)).is.not.true;
+  it('Can not play', function() {
+    setVenusScaleLevel(game, 4);
+    expect(player.simpleCanPlay(card)).is.not.true;
   });
 
   it('Should play', function() {
-    (game as any).venusScaleLevel = 6;
-    expect(player.canPlayIgnoringCost(card)).is.true;
-    expect(card.play()).is.undefined;
+    setVenusScaleLevel(game, 6);
+    expect(player.simpleCanPlay(card)).is.true;
+    expect(card.play(player)).is.undefined;
   });
 
   it('Should act - both actions available', function() {

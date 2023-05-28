@@ -1,48 +1,49 @@
 import {expect} from 'chai';
-import {Game} from '../../src/Game';
-import {Landlord} from '../../src/awards/Landlord';
-import {TestPlayers} from '../TestPlayers';
-import {SpaceName} from '../../src/SpaceName';
-import {MoonExpansion} from '../../src/moon/MoonExpansion';
-import {MoonSpaces} from '../../src/moon/MoonSpaces';
-import {Player} from '../../src/Player';
-import {ARES_OPTIONS_NO_HAZARDS} from '../ares/AresTestHelper';
+import {Game} from '../../src/server/Game';
+import {Landlord} from '../../src/server/awards/Landlord';
+import {TestPlayer} from '../TestPlayer';
+import {SpaceName} from '../../src/server/SpaceName';
+import {MoonExpansion} from '../../src/server/moon/MoonExpansion';
+import {MoonSpaces} from '../../src/common/moon/MoonSpaces';
+import {Player} from '../../src/server/Player';
 import {EmptyBoard} from '../ares/EmptyBoard';
-import {_AresHazardPlacement} from '../../src/ares/AresHazards';
+import {_AresHazardPlacement} from '../../src/server/ares/AresHazards';
 import {TileType} from '../../src/common/TileType';
-import {LandClaim} from '../../src/cards/base/LandClaim';
-import {setCustomGameOptions} from '../TestingUtils';
+import {LandClaim} from '../../src/server/cards/base/LandClaim';
+import {addCity, addGreenery, cast} from '../TestingUtils';
+import {SelectSpace} from '../../src/server/inputs/SelectSpace';
+import {testGame} from '../TestGame';
 
 describe('Landlord', () => {
-  let player: Player; let otherPlayer: Player; let game : Game;
+  let player: TestPlayer;
+  let otherPlayer: Player;
+  let game: Game;
   const award = new Landlord();
 
   beforeEach(function() {
-    player = TestPlayers.BLUE.newPlayer();
-    otherPlayer = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('gameid', [player, otherPlayer], player, ARES_OPTIONS_NO_HAZARDS);
+    [game, player, otherPlayer] = testGame(2, {aresExtension: true});
     game.board = EmptyBoard.newInstance();
   });
 
   it('Simple test', () => {
     expect(award.getScore(player)).to.eq(0);
 
-    game.addCityTile(player, SpaceName.NOCTIS_CITY);
+    addCity(player, SpaceName.NOCTIS_CITY);
     expect(award.getScore(player)).to.eq(1);
 
-    game.addGreenery(player, '35');
+    addGreenery(player, '35');
     expect(award.getScore(player)).to.eq(2);
   });
 
   it('Includes The Moon', () => {
-    const game = Game.newInstance('gameid', [player, otherPlayer], player, setCustomGameOptions({moonExpansion: true}));
+    Game.newInstance('gameid', [player, otherPlayer], player, {moonExpansion: true});
 
     expect(award.getScore(player)).to.eq(0);
 
-    game.addCityTile(player, SpaceName.NOCTIS_CITY);
+    addCity(player, SpaceName.NOCTIS_CITY);
     expect(award.getScore(player)).to.eq(1);
 
-    game.addGreenery(player, '35');
+    addGreenery(player, '35');
     expect(award.getScore(player)).to.eq(2);
 
     MoonExpansion.addMineTile(player, MoonSpaces.MARE_IMBRIUM);
@@ -50,7 +51,7 @@ describe('Landlord', () => {
   });
 
   it('Exclude Landclaimed Ares hazard tile from land-based award', function() {
-    const game = Game.newInstance('gameid', [player, otherPlayer], player, setCustomGameOptions({aresExtension: true}));
+    const game = Game.newInstance('gameid', [player, otherPlayer], player, {aresExtension: true});
 
     const firstSpace = game.board.getAvailableSpacesOnLand(player)[0];
     _AresHazardPlacement.putHazardAt(firstSpace, TileType.DUST_STORM_MILD);
@@ -58,8 +59,7 @@ describe('Landlord', () => {
     expect(award.getScore(player)).to.eq(0);
 
     const card = new LandClaim();
-    const action = card.play(player);
-    expect(action).is.not.undefined;
+    const action = cast(card.play(player), SelectSpace);
     action.cb(firstSpace);
 
     expect(firstSpace.player).to.eq(player);

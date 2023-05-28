@@ -1,8 +1,8 @@
 import {expect} from 'chai';
-import {ApiGame} from '../../src/routes/ApiGame';
-import {Game} from '../../src/Game';
+import {ApiGame} from '../../src/server/routes/ApiGame';
+import {Game} from '../../src/server/Game';
 import {MockResponse} from './HttpMocks';
-import {TestPlayers} from '../TestPlayers';
+import {TestPlayer} from '../TestPlayer';
 import {RouteTestScaffolding} from './RouteTestScaffolding';
 
 describe('ApiGame', () => {
@@ -16,30 +16,33 @@ describe('ApiGame', () => {
 
   it('no parameter', async () => {
     scaffolding.url = '/api/game';
-    await scaffolding.asyncGet(ApiGame.INSTANCE, res);
-    expect(res.statusCode).eq(404);
-    expect(res.content).eq('Not found: id parameter missing');
+    await scaffolding.get(ApiGame.INSTANCE, res);
+    expect(res.statusCode).eq(400);
+    expect(res.content).eq('Bad request: missing id parameter');
   });
 
   it('invalid id', async () => {
-    const player = TestPlayers.BLACK.newPlayer();
-    await scaffolding.ctx.gameLoader.add(Game.newInstance('validId', [player], player));
+    const player = TestPlayer.BLACK.newPlayer();
+    scaffolding.ctx.gameLoader.add(Game.newInstance('game-valid-id', [player], player));
     scaffolding.url = '/api/game?id=invalidId';
-    await scaffolding.asyncGet(ApiGame.INSTANCE, res);
+    await scaffolding.get(ApiGame.INSTANCE, res);
     expect(res.statusCode).eq(404);
     expect(res.content).eq('Not found: game not found');
   });
 
   it('valid id', async () => {
-    const player = TestPlayers.BLACK.newPlayer();
-    await scaffolding.ctx.gameLoader.add(Game.newInstance('validId', [player], player));
-    scaffolding.url = '/api/game?id=validId';
-    await scaffolding.asyncGet(ApiGame.INSTANCE, res);
+    const player = TestPlayer.BLACK.newPlayer();
+    scaffolding.ctx.gameLoader.add(Game.newInstance('game-valid-id', [player], player));
+    scaffolding.url = '/api/game?id=game-valid-id';
+    await scaffolding.get(ApiGame.INSTANCE, res);
     // This test is probably brittle.
-    expect(JSON.parse(res.content)).deep.eq(
+    const json = JSON.parse(res.content);
+    json.expectedPurgeTimeMs = -1;
+    expect(json).deep.eq(
       {
         'activePlayer': 'black',
-        'id': 'validId',
+        'expectedPurgeTimeMs': -1,
+        'id': 'game-valid-id',
         'lastSoloGeneration': 14,
         'phase': 'research',
         'players': [
@@ -53,7 +56,8 @@ describe('ApiGame', () => {
           'altVenusBoard': false,
           'aresExtension': false,
           'boardName': 'tharsis',
-          'cardsBlackList': [],
+          'bannedCards': [],
+          'ceoExtension': false,
           'coloniesExtension': false,
           'communityCardsOption': false,
           'corporateEra': true,
@@ -63,6 +67,7 @@ describe('ApiGame', () => {
           'escapeVelocityPeriod': 2,
           'escapeVelocityThreshold': 30,
           'fastModeOption': false,
+          'includeFanMA': false,
           'includeVenusMA': true,
           'initialDraftVariant': false,
           'moonExpansion': false,
@@ -82,6 +87,7 @@ describe('ApiGame', () => {
           'turmoilExtension': false,
           'undoOption': false,
           'venusNextExtension': false,
+          'twoCorpsVariant': false,
         },
       },
     );

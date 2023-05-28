@@ -1,45 +1,46 @@
 import {expect} from 'chai';
-import {Player} from '../../../src/Player';
-import {Game} from '../../../src/Game';
-import {Turmoil} from '../../../src/turmoil/Turmoil';
-import {ISpace} from '../../../src/boards/ISpace';
-import {setCustomGameOptions, setRulingPartyAndRulingPolicy} from '../../TestingUtils';
-import {TestPlayers} from '../../TestPlayers';
-import {Kelvinists, KELVINISTS_BONUS_1, KELVINISTS_BONUS_2, KELVINISTS_POLICY_1, KELVINISTS_POLICY_2, KELVINISTS_POLICY_3, KELVINISTS_POLICY_4} from '../../../src/turmoil/parties/Kelvinists';
-import {Resources} from '../../../src/common/Resources';
+import {Game} from '../../../src/server/Game';
+import {Turmoil} from '../../../src/server/turmoil/Turmoil';
+import {ISpace} from '../../../src/server/boards/ISpace';
+import {cast, setRulingPartyAndRulingPolicy} from '../../TestingUtils';
+import {TestPlayer} from '../../TestPlayer';
+import {Kelvinists, KELVINISTS_BONUS_1, KELVINISTS_BONUS_2, KELVINISTS_POLICY_1, KELVINISTS_POLICY_2, KELVINISTS_POLICY_3, KELVINISTS_POLICY_4} from '../../../src/server/turmoil/parties/Kelvinists';
+import {Resource} from '../../../src/common/Resource';
 import {TileType} from '../../../src/common/TileType';
-import {StormCraftIncorporated} from '../../../src/cards/colonies/StormCraftIncorporated';
-import {AndOptions} from '../../../src/inputs/AndOptions';
-import {SelectAmount} from '../../../src/inputs/SelectAmount';
+import {StormCraftIncorporated} from '../../../src/server/cards/colonies/StormCraftIncorporated';
+import {AndOptions} from '../../../src/server/inputs/AndOptions';
+import {SelectAmount} from '../../../src/server/inputs/SelectAmount';
+import {testGame} from '../../TestGame';
 
 describe('Kelvinists', function() {
-  let player : Player; let game : Game; let turmoil: Turmoil; let kelvinists: Kelvinists;
+  let player: TestPlayer;
+  let game: Game;
+  let turmoil: Turmoil;
+  let kelvinists: Kelvinists;
 
   beforeEach(function() {
-    player = TestPlayers.BLUE.newPlayer();
-    const gameOptions = setCustomGameOptions();
-    game = Game.newInstance('gameid', [player], player, gameOptions);
+    [game, player] = testGame(1, {turmoilExtension: true});
     turmoil = game.turmoil!;
     kelvinists = new Kelvinists();
   });
 
-  it('Ruling bonus 1: Gain 1 M€ for each Heat production you have', function() {
-    player.addProduction(Resources.HEAT, 5);
+  it('Ruling bonus 1: Gain 1 M€ for each heat production you have', function() {
+    player.production.add(Resource.HEAT, 5);
 
     const bonus = KELVINISTS_BONUS_1;
     bonus.grant(game);
     expect(player.megaCredits).to.eq(5);
   });
 
-  it('Ruling bonus 2: Gain 1 heat for each Heat production you have', function() {
-    player.addProduction(Resources.HEAT, 5);
+  it('Ruling bonus 2: Gain 1 heat for each heat production you have', function() {
+    player.production.add(Resource.HEAT, 5);
 
     const bonus = KELVINISTS_BONUS_2;
     bonus.grant(game);
     expect(player.heat).to.eq(5);
   });
 
-  it('Ruling policy 1: Pay 10 M€ to increase your Energy and Heat production 1 step', function() {
+  it('Ruling policy 1: Pay 10 M€ to increase your energy and heat production 1 step', function() {
     player.megaCredits = 10;
     setRulingPartyAndRulingPolicy(game, turmoil, kelvinists, KELVINISTS_POLICY_1.id);
 
@@ -47,8 +48,8 @@ describe('Kelvinists', function() {
     kelvinistsPolicy.action(player);
 
     game.deferredActions.runNext();
-    expect(player.getProduction(Resources.ENERGY)).to.eq(1);
-    expect(player.getProduction(Resources.HEAT)).to.eq(1);
+    expect(player.production.energy).to.eq(1);
+    expect(player.production.heat).to.eq(1);
   });
 
   it('Ruling policy 2: When you raise temperature, gain 3 M€ per step raised', function() {
@@ -64,7 +65,7 @@ describe('Kelvinists', function() {
     const kelvinistsPolicy = KELVINISTS_POLICY_3;
     expect(kelvinistsPolicy.canAct(player)).to.be.false;
 
-    player.addResource(Resources.HEAT, 6);
+    player.addResource(Resource.HEAT, 6);
     expect(kelvinistsPolicy.canAct(player)).to.be.true;
 
     const initialTR = player.getTerraformRating();
@@ -78,16 +79,16 @@ describe('Kelvinists', function() {
     setRulingPartyAndRulingPolicy(game, turmoil, kelvinists, KELVINISTS_POLICY_3.id);
 
     const stormcraft = new StormCraftIncorporated();
-    player.corporationCard = stormcraft;
+    player.setCorporationForTest(stormcraft);
     stormcraft.resourceCount = 2;
-    player.addResource(Resources.HEAT, 8);
+    player.addResource(Resource.HEAT, 8);
 
     const kelvinistsPolicy = KELVINISTS_POLICY_3;
     expect(kelvinistsPolicy.canAct(player)).to.be.true;
 
     const action = kelvinistsPolicy.action(player) as AndOptions;
-    const heatOption = action.options[0] as SelectAmount;
-    const floaterOption = action.options[1] as SelectAmount;
+    const heatOption = cast(action.options[0], SelectAmount);
+    const floaterOption = cast(action.options[1], SelectAmount);
 
     heatOption.cb(4);
     floaterOption.cb(1);
@@ -102,7 +103,7 @@ describe('Kelvinists', function() {
     setRulingPartyAndRulingPolicy(game, turmoil, kelvinists, KELVINISTS_POLICY_4.id);
 
     const emptySpace: ISpace = game.board.spaces.find((space) => space.bonus.length === 0) as ISpace;
-    game.addTile(player, emptySpace.spaceType, emptySpace, {tileType: TileType.CITY});
+    game.addTile(player, emptySpace, {tileType: TileType.CITY});
     expect(player.heat).to.eq(2);
   });
 });

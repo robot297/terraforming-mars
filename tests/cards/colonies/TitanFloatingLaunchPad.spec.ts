@@ -1,32 +1,33 @@
 import {expect} from 'chai';
-import {JupiterFloatingStation} from '../../../src/cards/colonies/JupiterFloatingStation';
-import {TitanFloatingLaunchPad} from '../../../src/cards/colonies/TitanFloatingLaunchPad';
-import {ICard} from '../../../src/cards/ICard';
-import {Luna} from '../../../src/colonies/Luna';
-import {Triton} from '../../../src/colonies/Triton';
-import {Game} from '../../../src/Game';
-import {OrOptions} from '../../../src/inputs/OrOptions';
-import {SelectCard} from '../../../src/inputs/SelectCard';
-import {SelectColony} from '../../../src/inputs/SelectColony';
+import {JupiterFloatingStation} from '../../../src/server/cards/colonies/JupiterFloatingStation';
+import {TitanFloatingLaunchPad} from '../../../src/server/cards/colonies/TitanFloatingLaunchPad';
+import {ICard} from '../../../src/server/cards/ICard';
+import {Luna} from '../../../src/server/colonies/Luna';
+import {Triton} from '../../../src/server/colonies/Triton';
+import {Game} from '../../../src/server/Game';
+import {OrOptions} from '../../../src/server/inputs/OrOptions';
+import {SelectCard} from '../../../src/server/inputs/SelectCard';
+import {SelectColony} from '../../../src/server/inputs/SelectColony';
 import {TestPlayer} from '../../TestPlayer';
-import {AndOptions} from '../../../src/inputs/AndOptions';
-import {newTestGame, getTestPlayer} from '../../TestGame';
+import {AndOptions} from '../../../src/server/inputs/AndOptions';
+import {testGame} from '../../TestGame';
 import {cast} from '../../TestingUtils';
 
 describe('TitanFloatingLaunchPad', function() {
-  let card : TitanFloatingLaunchPad; let player : TestPlayer; let game : Game;
+  let card: TitanFloatingLaunchPad;
+  let player: TestPlayer;
+  let game: Game;
 
   beforeEach(function() {
     card = new TitanFloatingLaunchPad();
-    game = newTestGame(2, {coloniesExtension: true, turmoilExtension: false});
-    player = getTestPlayer(game, 0);
     // Second player is ignored.
+    [game, player] = testGame(2, {coloniesExtension: true, turmoilExtension: false});
   });
 
   it('Should act', function() {
     player.playedCards.push(card);
     expect(card.canAct()).is.true;
-    expect(card.getVictoryPoints()).to.eq(1);
+    expect(card.getVictoryPoints(player)).to.eq(1);
   });
 
   it('Should play with single targets', function() {
@@ -60,7 +61,7 @@ describe('TitanFloatingLaunchPad', function() {
 
     card.action(player);
     expect(game.deferredActions).has.lengthOf(1);
-    const selectCard = game.deferredActions.peek()!.execute() as SelectCard<ICard>;
+    const selectCard = cast(game.deferredActions.peek()!.execute(), SelectCard<ICard>);
     selectCard.cb([card]);
     expect(card.resourceCount).to.eq(1);
   });
@@ -77,14 +78,14 @@ describe('TitanFloatingLaunchPad', function() {
 
     orOptions.options[1].cb(); // Add resource
     expect(game.deferredActions).has.lengthOf(1);
-    const selectCard = game.deferredActions.peek()!.execute() as SelectCard<ICard>;
+    const selectCard = cast(game.deferredActions.peek()!.execute(), SelectCard<ICard>);
     game.deferredActions.pop();
     selectCard.cb([card]);
     expect(card.resourceCount).to.eq(8);
 
     orOptions.options[0].cb(); // Trade for free
     expect(game.deferredActions).has.lengthOf(1);
-    const selectColony = game.deferredActions.peek()!.execute() as SelectColony;
+    const selectColony = cast(game.deferredActions.peek()!.execute(), SelectColony);
     selectColony.cb(selectColony.colonies[0]);
     expect(card.resourceCount).to.eq(7);
     expect(player.megaCredits).to.eq(2);
@@ -111,10 +112,10 @@ describe('TitanFloatingLaunchPad', function() {
     expect(payAction.options).has.length(1);
 
     const floaterOption = cast(payAction, OrOptions).options[0];
-    expect(floaterOption.title).to.match(/Pay 1 Floater/);
+    expect(floaterOption.title).to.match(/Pay 1 floater/);
 
     floaterOption.cb();
-    (tradeAction as AndOptions).options[1].cb(luna);
+    tradeAction.options[1].cb(luna);
 
     expect(card.resourceCount).eq(0);
     expect(player.megaCredits).eq(2);

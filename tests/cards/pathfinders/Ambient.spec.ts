@@ -1,14 +1,13 @@
 import {expect} from 'chai';
-import {Ambient} from '../../../src/cards/pathfinders/Ambient';
-import {Game} from '../../../src/Game';
+import {Ambient} from '../../../src/server/cards/pathfinders/Ambient';
+import {Game} from '../../../src/server/Game';
 import {TestPlayer} from '../../TestPlayer';
-import {getTestPlayer, newTestGame} from '../../TestGame';
-import {cast, fakeCard, runAllActions} from '../../TestingUtils';
-import {Tags} from '../../../src/common/cards/Tags';
-import {Resources} from '../../../src/common/Resources';
+import {testGame} from '../../TestGame';
+import {cast, fakeCard, runAllActions, setTemperature} from '../../TestingUtils';
+import {Tag} from '../../../src/common/cards/Tag';
 import {MAX_TEMPERATURE} from '../../../src/common/constants';
-import {OrOptions} from '../../../src/inputs/OrOptions';
-import {SelectCard} from '../../../src/inputs/SelectCard';
+import {OrOptions} from '../../../src/server/inputs/OrOptions';
+import {SelectCard} from '../../../src/server/inputs/SelectCard';
 
 describe('Ambient', function() {
   let card: Ambient;
@@ -18,59 +17,58 @@ describe('Ambient', function() {
 
   beforeEach(function() {
     card = new Ambient();
-    game = newTestGame(2);
-    player = getTestPlayer(game, 0);
-    player2 = getTestPlayer(game, 1);
-    player.corporationCard = card;
+    [game, player, player2] = testGame(2);
+    player.setCorporationForTest(card);
   });
 
   it('initialAction', function() {
     expect(game.getVenusScaleLevel()).eq(0);
     expect(player.getTerraformRating()).eq(20);
 
-    card.initialAction(player);
+    player.runInitialAction(card);
+    runAllActions(game);
 
     expect(game.getVenusScaleLevel()).eq(4);
     expect(player.getTerraformRating()).eq(22);
   });
 
   it('onCardPlayed', function() {
-    expect(player.getProduction(Resources.HEAT)).eq(0);
+    expect(player.production.heat).eq(0);
 
     card.onCardPlayed(player, fakeCard({tags: []}));
-    expect(player.getProduction(Resources.HEAT)).eq(0);
+    expect(player.production.heat).eq(0);
 
-    card.onCardPlayed(player, fakeCard({tags: [Tags.EARTH]}));
-    expect(player.getProduction(Resources.HEAT)).eq(0);
+    card.onCardPlayed(player, fakeCard({tags: [Tag.EARTH]}));
+    expect(player.production.heat).eq(0);
 
-    card.onCardPlayed(player, fakeCard({tags: [Tags.VENUS]}));
-    expect(player.getProduction(Resources.HEAT)).eq(1);
-    expect(player2.getProduction(Resources.HEAT)).eq(0);
+    card.onCardPlayed(player, fakeCard({tags: [Tag.VENUS]}));
+    expect(player.production.heat).eq(1);
+    expect(player2.production.heat).eq(0);
 
-    card.onCardPlayed(player2, fakeCard({tags: [Tags.VENUS]}));
-    expect(player.getProduction(Resources.HEAT)).eq(1);
-    expect(player2.getProduction(Resources.HEAT)).eq(0);
+    card.onCardPlayed(player2, fakeCard({tags: [Tag.VENUS]}));
+    expect(player.production.heat).eq(1);
+    expect(player2.production.heat).eq(0);
   });
 
   it('canAct', function() {
     player.heat = 7;
-    (game as any).temperature = MAX_TEMPERATURE;
+    setTemperature(game, MAX_TEMPERATURE);
 
     expect(card.canAct(player)).is.false;
 
     player.heat = 8;
-    (game as any).temperature = MAX_TEMPERATURE - 2;
+    setTemperature(game, MAX_TEMPERATURE - 2);
     expect(card.canAct(player)).is.false;
 
 
     player.heat = 8;
-    (game as any).temperature = MAX_TEMPERATURE;
+    setTemperature(game, MAX_TEMPERATURE);
     expect(card.canAct(player)).is.true;
   });
 
   it('action', () => {
     player.heat = 9;
-    (game as any).temperature = MAX_TEMPERATURE;
+    setTemperature(game, MAX_TEMPERATURE);
 
     expect(player.getTerraformRating()).eq(20);
 
@@ -83,7 +81,7 @@ describe('Ambient', function() {
 
   it('action is repeatable', () => {
     player.heat = 16;
-    (game as any).temperature = MAX_TEMPERATURE;
+    setTemperature(game, MAX_TEMPERATURE);
 
     const getBlueActions = function() {
       const actions = cast(player.getActions(), OrOptions);

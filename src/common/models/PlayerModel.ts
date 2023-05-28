@@ -5,18 +5,24 @@ import {ITagCount} from '../cards/ITagCount';
 import {PlayerInputModel} from './PlayerInputModel';
 import {TimerModel} from './TimerModel';
 import {GameModel} from './GameModel';
-import {PlayerId, SpectatorId} from '../Types';
+import {PlayerId, ParticipantId} from '../Types';
 import {CardName} from '../cards/CardName';
+import {Resource} from '../Resource';
 
 export interface ViewModel {
   game: GameModel;
   players: Array<PublicPlayerModel>;
-  id?: PlayerId | SpectatorId;
+  id?: ParticipantId;
   thisPlayer: PublicPlayerModel | undefined;
 }
 
+// 'off': Resources (or production) are unprotected.
+// 'on': Resources (or production) are protected.
+// 'half': Half resources are protected when targeted. Applies to Botanical Experience.
+export type Protection = 'off' | 'on' | 'half';
+
 /** The public information about a player */
-export interface PublicPlayerModel {
+export type PublicPlayerModel = {
   actionsTakenThisRound: number;
   actionsThisGeneration: Array<string /* CardName */>;
   actionsTakenThisGame: number;
@@ -27,14 +33,12 @@ export interface PublicPlayerModel {
   citiesCount: number;
   coloniesCount: number;
   color: Color;
-  corporationCard: CardModel | undefined;
   energy: number;
   energyProduction: number;
   fleetSize: number;
   heat: number;
   heatProduction: number;
-  // TODO(kberg): this is removeable now.
-  id: string; // Color
+  id: PlayerId | undefined;
   influence: number;
   isActive: boolean;
   lastCardPlayed?: CardName;
@@ -46,8 +50,9 @@ export interface PublicPlayerModel {
   noTagsCount: number;
   plants: number;
   plantProduction: number;
-  plantsAreProtected: boolean;
-  playedCards: Array<CardModel>;
+  protectedResources: Record<Resource, Protection>;
+  protectedProduction: Record<Resource, Protection>;
+  tableau: Array<CardModel>;
   selfReplicatingRobotsCards: Array<CardModel>;
   steel: number;
   steelProduction: number;
@@ -69,8 +74,11 @@ export interface PlayerViewModel extends ViewModel {
   dealtCorporationCards: Array<CardModel>;
   dealtPreludeCards: Array<CardModel>;
   dealtProjectCards: Array<CardModel>;
+  dealtCeoCards: Array<CardModel>;
+  draftedCorporations: Array<CardModel>;
   draftedCards: Array<CardModel>;
   id: PlayerId;
+  ceoCardsInHand: Array<CardModel>;
   pickedCorporationCard: Array<CardModel>; // Why Array?
   preludeCardsInHand: Array<CardModel>;
   thisPlayer: PublicPlayerModel;

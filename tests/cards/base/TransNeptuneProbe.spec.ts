@@ -1,12 +1,14 @@
-
 import {expect} from 'chai';
-import {TransNeptuneProbe} from '../../../src/cards/base/TransNeptuneProbe';
+import {testGame} from '../../TestGame';
+import {TransNeptuneProbe} from '../../../src/server/cards/base/TransNeptuneProbe';
 
 describe('TransNeptuneProbe', function() {
   it('Should play', function() {
+    const [, player] = testGame(1);
     const card = new TransNeptuneProbe();
-    const action = card.play();
+    const action = card.play(player);
+
     expect(action).is.undefined;
-    expect(card.getVictoryPoints()).to.eq(1);
+    expect(card.getVictoryPoints(player)).to.eq(1);
   });
 });

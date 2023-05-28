@@ -1,9 +1,9 @@
 import {expect} from 'chai';
-import {LuxuryEstate} from '../../../src/cards/pathfinders/LuxuryEstate';
-import {Game} from '../../../src/Game';
+import {LuxuryEstate} from '../../../src/server/cards/pathfinders/LuxuryEstate';
+import {Game} from '../../../src/server/Game';
 import {TestPlayer} from '../../TestPlayer';
-import {TestPlayers} from '../../TestPlayers';
-import {addGreenery, addCity} from '../../TestingUtils';
+import {addGreenery, addCity, setOxygenLevel} from '../../TestingUtils';
+import {testGame} from '../../TestGame';
 
 describe('LuxuryEstate', function() {
   let card: LuxuryEstate;
@@ -13,18 +13,16 @@ describe('LuxuryEstate', function() {
 
   beforeEach(function() {
     card = new LuxuryEstate();
-    player = TestPlayers.BLUE.newPlayer();
-    player2 = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('gameid', [player, player2], player);
+    [game, player, player2] = testGame(2);
     player.playedCards.push(card);
   });
 
   it('canPlay', function() {
-    (game as any).oxygenLevel = 6;
-    expect(player.canPlayIgnoringCost(card)).is.false;
+    setOxygenLevel(game, 6);
+    expect(player.simpleCanPlay(card)).is.false;
 
-    (game as any).oxygenLevel = 7;
-    expect(player.canPlayIgnoringCost(card)).is.true;
+    setOxygenLevel(game, 7);
+    expect(player.simpleCanPlay(card)).is.true;
   });
 
   it('play', function() {
@@ -49,6 +47,12 @@ describe('LuxuryEstate', function() {
     // Other player's cities don't count.
     player.titanium = 0;
     addCity(player2);
+    card.play(player);
+    expect(player.titanium).eq(3);
+
+    // Other player's greeneries don't count.
+    player.titanium = 0;
+    addGreenery(player2);
     card.play(player);
     expect(player.titanium).eq(3);
   });

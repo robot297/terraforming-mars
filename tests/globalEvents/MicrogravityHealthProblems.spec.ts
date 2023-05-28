@@ -1,17 +1,17 @@
 import {expect} from 'chai';
-import {Luna} from '../../src/colonies/Luna';
-import {Triton} from '../../src/colonies/Triton';
-import {Game} from '../../src/Game';
-import {MicrogravityHealthProblems} from '../../src/turmoil/globalEvents/MicrogravityHealthProblems';
-import {Kelvinists} from '../../src/turmoil/parties/Kelvinists';
-import {Turmoil} from '../../src/turmoil/Turmoil';
-import {TestPlayers} from '../TestPlayers';
+import {Luna} from '../../src/server/colonies/Luna';
+import {Triton} from '../../src/server/colonies/Triton';
+import {Game} from '../../src/server/Game';
+import {MicrogravityHealthProblems} from '../../src/server/turmoil/globalEvents/MicrogravityHealthProblems';
+import {Kelvinists} from '../../src/server/turmoil/parties/Kelvinists';
+import {Turmoil} from '../../src/server/turmoil/Turmoil';
+import {TestPlayer} from '../TestPlayer';
 
 describe('MicrogravityHealthProblems', function() {
   it('resolve play', function() {
     const card = new MicrogravityHealthProblems();
-    const player = TestPlayers.BLUE.newPlayer();
-    const player2 = TestPlayers.RED.newPlayer();
+    const player = TestPlayer.BLUE.newPlayer();
+    const player2 = TestPlayer.RED.newPlayer();
     const game = Game.newInstance('gameid', [player, player2], player);
     const turmoil = Turmoil.newInstance(game);
     const colony1 = new Luna();
@@ -25,7 +25,7 @@ describe('MicrogravityHealthProblems', function() {
     turmoil.chairman = player2.id;
     turmoil.dominantParty = new Kelvinists();
     turmoil.dominantParty.partyLeader = player2.id;
-    turmoil.dominantParty.delegates.push(player2.id);
+    turmoil.dominantParty.delegates.add(player2.id);
     player.megaCredits = 20;
     player2.megaCredits = 20;
     card.resolve(game, turmoil);

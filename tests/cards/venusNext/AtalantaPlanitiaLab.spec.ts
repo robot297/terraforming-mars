@@ -1,18 +1,15 @@
 import {expect} from 'chai';
-import {AtalantaPlanitiaLab} from '../../../src/cards/venusNext/AtalantaPlanitiaLab';
-import {Game} from '../../../src/Game';
-import {TestPlayers} from '../../TestPlayers';
+import {AtalantaPlanitiaLab} from '../../../src/server/cards/venusNext/AtalantaPlanitiaLab';
+import {testGame} from '../../TestGame';
 
 describe('AtalantaPlanitiaLab', function() {
   it('Should play', function() {
     const card = new AtalantaPlanitiaLab();
-    const player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    Game.newInstance('gameid', [player, redPlayer], player);
-    expect(player.canPlayIgnoringCost(card)).is.not.true;
+    const [, player] = testGame(2);
+    expect(player.simpleCanPlay(card)).is.not.true;
     const action = card.play(player);
     expect(action).is.undefined;
     expect(player.cardsInHand).has.lengthOf(2);
-    expect(card.getVictoryPoints()).to.eq(2);
+    expect(card.getVictoryPoints(player)).to.eq(2);
   });
 });

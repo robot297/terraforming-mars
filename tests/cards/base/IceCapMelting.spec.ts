@@ -1,26 +1,27 @@
 import {expect} from 'chai';
-import {IceCapMelting} from '../../../src/cards/base/IceCapMelting';
-import {Game} from '../../../src/Game';
-import {Player} from '../../../src/Player';
-import {TestPlayers} from '../../TestPlayers';
+import {setTemperature} from '../../TestingUtils';
+import {IceCapMelting} from '../../../src/server/cards/base/IceCapMelting';
+import {Game} from '../../../src/server/Game';
+import {TestPlayer} from '../../TestPlayer';
+import {testGame} from '../../TestGame';
 
 describe('IceCapMelting', function() {
-  let card : IceCapMelting; let player : Player; let game : Game;
+  let card: IceCapMelting;
+  let player: TestPlayer;
+  let game: Game;
 
   beforeEach(function() {
     card = new IceCapMelting();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('gameid', [player, redPlayer], player);
+    [game, player] = testGame(2);
   });
 
-  it('Can\'t play', function() {
-    expect(player.canPlayIgnoringCost(card)).is.not.true;
+  it('Can not play', function() {
+    expect(player.simpleCanPlay(card)).is.not.true;
   });
 
   it('Should play', function() {
-    (game as any).temperature = 2;
-    expect(player.canPlayIgnoringCost(card)).is.true;
+    setTemperature(game, 2);
+    expect(player.simpleCanPlay(card)).is.true;
 
     card.play(player);
     expect(game.deferredActions).has.lengthOf(1);

@@ -1,34 +1,34 @@
 import {expect} from 'chai';
-import {Insects} from '../../../src/cards/base/Insects';
-import {Trees} from '../../../src/cards/base/Trees';
-import {Game} from '../../../src/Game';
-import {Player} from '../../../src/Player';
-import {Resources} from '../../../src/common/Resources';
-import {TestPlayers} from '../../TestPlayers';
+import {setOxygenLevel} from '../../TestingUtils';
+import {Insects} from '../../../src/server/cards/base/Insects';
+import {Trees} from '../../../src/server/cards/base/Trees';
+import {Game} from '../../../src/server/Game';
+import {TestPlayer} from '../../TestPlayer';
+import {testGame} from '../../TestGame';
 
 describe('Insects', function() {
-  let card : Insects; let player : Player; let game : Game;
+  let card: Insects;
+  let player: TestPlayer;
+  let game: Game;
 
   beforeEach(function() {
     card = new Insects();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('gameid', [player, redPlayer], player);
+    [game, player] = testGame(2);
   });
 
-  it('Can\'t play', function() {
-    expect(player.canPlayIgnoringCost(card)).is.not.true;
+  it('Can not play', function() {
+    expect(player.simpleCanPlay(card)).is.not.true;
   });
 
   it('Should play', function() {
-    (game as any).oxygenLevel = 6;
-    expect(player.canPlayIgnoringCost(card)).is.true;
+    setOxygenLevel(game, 6);
+    expect(player.simpleCanPlay(card)).is.true;
 
     card.play(player);
-    expect(player.getProduction(Resources.PLANTS)).to.eq(0);
+    expect(player.production.plants).to.eq(0);
 
     player.playedCards.push(new Trees());
     card.play(player);
-    expect(player.getProduction(Resources.PLANTS)).to.eq(1);
+    expect(player.production.plants).to.eq(1);
   });
 });

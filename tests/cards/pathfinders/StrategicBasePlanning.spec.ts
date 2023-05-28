@@ -1,23 +1,23 @@
 import {expect} from 'chai';
-import {getTestPlayer, newTestGame} from '../../TestGame';
-import {StrategicBasePlanning} from '../../../src/cards/pathfinders/StrategicBasePlanning';
-import {Player} from '../../../src/Player';
-import {SelectSpace} from '../../../src/inputs/SelectSpace';
+import {testGame} from '../../TestGame';
+import {StrategicBasePlanning} from '../../../src/server/cards/pathfinders/StrategicBasePlanning';
+import {SelectSpace} from '../../../src/server/inputs/SelectSpace';
 import {TileType} from '../../../src/common/TileType';
-import {SelectColony} from '../../../src/inputs/SelectColony';
+import {SelectColony} from '../../../src/server/inputs/SelectColony';
 import {ColonyName} from '../../../src/common/colonies/ColonyName';
-import {Game} from '../../../src/Game';
+import {Game} from '../../../src/server/Game';
 import {cast} from '../../TestingUtils';
+import {TestPlayer} from '../../TestPlayer';
 
 describe('StrategicBasePlanning', function() {
   let card: StrategicBasePlanning;
-  let player: Player;
+  let player: TestPlayer;
   let game: Game;
 
   beforeEach(function() {
     card = new StrategicBasePlanning();
     // 2 players to remove an early-game solo action in the deferred actions queue.
-    game = newTestGame(2, {
+    [game, player] = testGame(2, {
       coloniesExtension: true,
       customColoniesList: [
         // The important thing is that Europa is absent.
@@ -27,7 +27,6 @@ describe('StrategicBasePlanning', function() {
         ColonyName.TITAN,
         ColonyName.TRITON],
     });
-    player = getTestPlayer(game, 0);
   });
 
   it('Should play', function() {

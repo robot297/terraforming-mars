@@ -1,22 +1,18 @@
-import {Game} from '../../../src/Game';
-import {Player} from '../../../src/Player';
-import {setCustomGameOptions} from '../../TestingUtils';
-import {TestPlayers} from '../../TestPlayers';
-import {AIControlledMineNetwork} from '../../../src/cards/moon/AIControlledMineNetwork';
+import {Game} from '../../../src/server/Game';
+import {TestPlayer} from '../../TestPlayer';
+import {AIControlledMineNetwork} from '../../../src/server/cards/moon/AIControlledMineNetwork';
 import {expect} from 'chai';
-import {MoonExpansion} from '../../../src/moon/MoonExpansion';
-import {IMoonData} from '../../../src/moon/IMoonData';
-
-const MOON_OPTIONS = setCustomGameOptions({moonExpansion: true});
+import {MoonExpansion} from '../../../src/server/moon/MoonExpansion';
+import {IMoonData} from '../../../src/server/moon/IMoonData';
 
 describe('AIControlledMineNetwork', () => {
-  let player: Player;
+  let player: TestPlayer;
   let card: AIControlledMineNetwork;
   let moonData: IMoonData;
 
   beforeEach(() => {
-    player = TestPlayers.BLUE.newPlayer();
-    const game = Game.newInstance('gameid', [player], player, MOON_OPTIONS);
+    player = TestPlayer.BLUE.newPlayer();
+    const game = Game.newInstance('gameid', [player], player, {moonExpansion: true});
     card = new AIControlledMineNetwork();
     moonData = MoonExpansion.moonData(game);
   });

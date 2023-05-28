@@ -1,8 +1,7 @@
 import {expect} from 'chai';
-import {MartianCulture} from '../../../src/cards/pathfinders/MartianCulture';
-import {Game} from '../../../src/Game';
+import {MartianCulture} from '../../../src/server/cards/pathfinders/MartianCulture';
+import {testGame} from '../../TestGame';
 import {TestPlayer} from '../../TestPlayer';
-import {TestPlayers} from '../../TestPlayers';
 import {runAllActions} from '../../TestingUtils';
 
 describe('MartianCulture', function() {
@@ -12,9 +11,7 @@ describe('MartianCulture', function() {
 
   beforeEach(function() {
     card = new MartianCulture();
-    player = TestPlayers.BLUE.newPlayer();
-    player2 = TestPlayers.RED.newPlayer();
-    Game.newInstance('gameid', [player, player2], player);
+    [/* skipped */, player, player2] = testGame(2);
     player.playedCards.push(card);
   });
 
@@ -43,15 +40,15 @@ describe('MartianCulture', function() {
 
   it('victoryPoints', function() {
     card.resourceCount = 1;
-    expect(card.getVictoryPoints()).eq(0);
+    expect(card.getVictoryPoints(player)).eq(0);
 
     card.resourceCount = 2;
-    expect(card.getVictoryPoints()).eq(1);
+    expect(card.getVictoryPoints(player)).eq(1);
 
     card.resourceCount = 3;
-    expect(card.getVictoryPoints()).eq(1);
+    expect(card.getVictoryPoints(player)).eq(1);
 
     card.resourceCount = 4;
-    expect(card.getVictoryPoints()).eq(2);
+    expect(card.getVictoryPoints(player)).eq(2);
   });
 });

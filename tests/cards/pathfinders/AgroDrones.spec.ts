@@ -1,8 +1,8 @@
 import {expect} from 'chai';
-import {AgroDrones} from '../../../src/cards/pathfinders/AgroDrones';
-import {Game} from '../../../src/Game';
+import {setTemperature} from '../../TestingUtils';
+import {AgroDrones} from '../../../src/server/cards/pathfinders/AgroDrones';
+import {Game} from '../../../src/server/Game';
 import {TestPlayer} from '../../TestPlayer';
-import {TestPlayers} from '../../TestPlayers';
 
 describe('AgroDrones', function() {
   let card: AgroDrones;
@@ -11,17 +11,17 @@ describe('AgroDrones', function() {
 
   beforeEach(function() {
     card = new AgroDrones();
-    player = TestPlayers.BLUE.newPlayer();
+    player = TestPlayer.BLUE.newPlayer();
     game = Game.newInstance('gameid', [player], player);
     player.playedCards.push(card);
   });
 
   it('canPlay', function() {
-    (game as any).temperature = -20;
-    expect(player.canPlayIgnoringCost(card)).is.false;
+    setTemperature(game, -20);
+    expect(player.simpleCanPlay(card)).is.false;
 
-    (game as any).temperature = -18;
-    expect(player.canPlayIgnoringCost(card)).is.true;
+    setTemperature(game, -18);
+    expect(player.simpleCanPlay(card)).is.true;
   });
 
   it('Can act', function() {

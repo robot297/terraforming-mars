@@ -1,75 +1,49 @@
-import {Player} from '../src/Player';
-import {PlayerInput} from '../src/PlayerInput';
+import {Player} from '../src/server/Player';
+import {PlayerInput} from '../src/server/PlayerInput';
 import {Color} from '../src/common/Color';
 import {Units} from '../src/common/Units';
-import {Tags} from '../src/common/cards/Tags';
+import {Tag} from '../src/common/cards/Tag';
 import {InputResponse} from '../src/common/inputs/InputResponse';
-import {PlayerId} from '../src/common/Types';
+import {ICorporationCard} from '../src/server/cards/corporation/ICorporationCard';
+import {Tags} from '../src/server/player/Tags';
 
+class TestPlayerFactory {
+  constructor(private color: Color) {}
+  newPlayer(beginner: boolean = false, idSuffix = ''): TestPlayer {
+    return new TestPlayer(this.color, beginner, idSuffix);
+  }
+}
+
+class TestTags extends Tags {
+  private testPlayer: TestPlayer;
+  constructor(player: TestPlayer) {
+    super(player);
+    this.testPlayer = player;
+  }
+
+  public override rawCount(tag: Tag, includeEventsTags:boolean = false): number {
+    return this.testPlayer.tagsForTest !== undefined ?
+      this.testPlayer.tagsForTest[tag] ?? 0 :
+      super.rawCount(tag, includeEventsTags);
+  }
+}
 export class TestPlayer extends Player {
-  constructor(color: Color, beginner: boolean = false) {
-    super('player-' + color, color, beginner, 0, 'p-' + color + '-id' as PlayerId);
+  // Prefer these players when testing, as their IDs are easy to recognize in output. Plus TestPlayer instances have useful support methods.
+  public static BLUE: TestPlayerFactory = new TestPlayerFactory(Color.BLUE);
+  public static RED: TestPlayerFactory = new TestPlayerFactory(Color.RED);
+  public static YELLOW: TestPlayerFactory = new TestPlayerFactory(Color.YELLOW);
+  public static GREEN: TestPlayerFactory = new TestPlayerFactory(Color.GREEN);
+  public static BLACK: TestPlayerFactory = new TestPlayerFactory(Color.BLACK);
+  public static PURPLE: TestPlayerFactory = new TestPlayerFactory(Color.PURPLE);
+  public static ORANGE: TestPlayerFactory = new TestPlayerFactory(Color.ORANGE);
+  public static PINK: TestPlayerFactory = new TestPlayerFactory(Color.PINK);
+
+  constructor(color: Color, beginner: boolean = false, idSuffix = '') {
+    super('player-' + color, color, beginner, 0, `p-${color}-id${idSuffix}`);
+    this.tags = new TestTags(this);
   }
 
-  public setProductionForTest(units: Partial<Units>) {
-    if (units.megacredits !== undefined) {
-      this.megaCreditProduction = units.megacredits;
-    }
-    if (units.steel !== undefined) {
-      this.steelProduction = units.steel;
-    }
-    if (units.titanium !== undefined) {
-      this.titaniumProduction = units.titanium;
-    }
-    if (units.plants !== undefined) {
-      this.plantProduction = units.plants;
-    }
-    if (units.energy !== undefined) {
-      this.energyProduction = units.energy;
-    }
-    if (units.heat !== undefined) {
-      this.heatProduction = units.heat;
-    }
-  }
-
-  public getProductionForTest(): Units {
-    return {
-      megacredits: this.megaCreditProduction,
-      steel: this.steelProduction,
-      titanium: this.titaniumProduction,
-      plants: this.plantProduction,
-      energy: this.energyProduction,
-      heat: this.heatProduction,
-    };
-  }
-
-  public getResourcesForTest(): Units {
-    return {
-      megacredits: this.megaCredits,
-      steel: this.steel,
-      titanium: this.titanium,
-      plants: this.plants,
-      energy: this.energy,
-      heat: this.heat,
-    };
-  }
-
-  // Just makes it public, and therefore callable for testing.
-  public override getStandardProjectOption() {
-    return super.getStandardProjectOption();
-  }
-
-  public tagsForTest: Partial<TagsForTest> | undefined = undefined;
-
-  public override getRawTagCount(tag: Tags, includeEventsTags:boolean = false): number {
-    return this.tagsForTest !== undefined ?
-      this.tagsForTest[tag] ?? 0 :
-      super.getRawTagCount(tag, includeEventsTags);
-  }
-
-  public override runInput(input: InputResponse, pi: PlayerInput): void {
-    super.runInput(input, pi);
-  }
+  public tagsForTest: Partial<Record<Tag, number>> | undefined = undefined;
 
   public purse(): Units {
     return Units.of({
@@ -82,29 +56,39 @@ export class TestPlayer extends Player {
     });
   }
 
+  public setResourcesForTest(units: Units) {
+    this.megaCredits = units.megacredits;
+    this.steel = units.steel;
+    this.titanium = units.titanium;
+    this.plants = units.plants;
+    this.energy = units.energy;
+    this.heat = units.heat;
+  }
+
+  public override runInput(input: InputResponse, pi: PlayerInput): void {
+    super.runInput(input, pi);
+  }
+
+  public popWaitingFor2(): [PlayerInput | undefined, (() => void) | undefined] {
+    const waitingFor = this.waitingFor;
+    const waitingForCb = this.waitingForCb;
+    this.waitingFor = undefined;
+    this.waitingForCb = undefined;
+    return [waitingFor, waitingForCb];
+  }
+
   public popWaitingFor(): PlayerInput | undefined {
     const waitingFor = this.getWaitingFor();
     this.waitingFor = undefined;
     this.waitingForCb = undefined;
     return waitingFor;
   }
-}
 
-export interface TagsForTest {
-  building: number;
-  space: number;
-  science: number;
-  power: number;
-  earth: number;
-  jovian: number;
-  venus: number;
-  plant: number;
-  microbe: number;
-  animal: number;
-  city: number;
-  wild: number;
-  moon: number;
-  event: number;
-  mars: number;
-  clone: number;
+  public setCorporationForTest(card: ICorporationCard | undefined) {
+    if (card === undefined) {
+      this.corporations = [];
+    } else {
+      this.corporations = [card];
+    }
+  }
 }

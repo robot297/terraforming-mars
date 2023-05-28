@@ -1,11 +1,11 @@
 import {expect} from 'chai';
-import {Kickstarter} from '../../../src/cards/pathfinders/Kickstarter';
+import {Kickstarter} from '../../../src/server/cards/pathfinders/Kickstarter';
 import {TestPlayer} from '../../TestPlayer';
-import {getTestPlayer, newTestGame} from '../../TestGame';
-import {Game} from '../../../src/Game';
-import {DeclareCloneTag} from '../../../src/pathfinders/DeclareCloneTag';
-import {OrOptions} from '../../../src/inputs/OrOptions';
-import {Tags} from '../../../src/common/cards/Tags';
+import {testGame} from '../../TestGame';
+import {Game} from '../../../src/server/Game';
+import {DeclareCloneTag} from '../../../src/server/pathfinders/DeclareCloneTag';
+import {OrOptions} from '../../../src/server/inputs/OrOptions';
+import {Tag} from '../../../src/common/cards/Tag';
 import {cast} from '../../TestingUtils';
 
 describe('Kickstarter', function() {
@@ -15,12 +15,11 @@ describe('Kickstarter', function() {
 
   beforeEach(function() {
     card = new Kickstarter();
-    game = newTestGame(1, {pathfindersExpansion: true});
-    player = getTestPlayer(game, 0);
+    [game, player] = testGame(1, {pathfindersExpansion: true});
   });
 
   it('play', () => {
-    expect(card.tags).deep.eq([Tags.CLONE]);
+    expect(card.tags).deep.eq([Tag.CLONE]);
 
     card.play(player);
 
@@ -29,9 +28,9 @@ describe('Kickstarter', function() {
     const action = cast(game.deferredActions.pop(), DeclareCloneTag);
     const options = cast(action.execute(), OrOptions);
 
-    expect(options.options[2].title).to.match(/mars/);
+    expect(options.options[1].title).to.match(/mars/);
     expect(game.pathfindersData).deep.eq({
-      venus: 0,
+      venus: -1,
       earth: 0,
       mars: 0,
       jovian: 0,
@@ -39,10 +38,10 @@ describe('Kickstarter', function() {
       vps: [],
     });
 
-    options.options[2].cb();
+    options.options[1].cb();
 
     expect(game.pathfindersData).deep.eq({
-      venus: 0,
+      venus: -1,
       earth: 0,
       mars: 3,
       jovian: 0,
@@ -50,6 +49,6 @@ describe('Kickstarter', function() {
       vps: [],
     });
 
-    expect(card.tags).deep.eq([Tags.MARS]);
+    expect(card.tags).deep.eq([Tag.MARS]);
   });
 });

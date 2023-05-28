@@ -1,22 +1,20 @@
 import {expect} from 'chai';
 import {cast} from '../../TestingUtils';
-import {TitanAirScrapping} from '../../../src/cards/colonies/TitanAirScrapping';
-import {Game} from '../../../src/Game';
-import {OrOptions} from '../../../src/inputs/OrOptions';
-import {Player} from '../../../src/Player';
-import {TestPlayers} from '../../TestPlayers';
+import {TitanAirScrapping} from '../../../src/server/cards/colonies/TitanAirScrapping';
+import {testGame} from '../../TestGame';
+import {OrOptions} from '../../../src/server/inputs/OrOptions';
+import {TestPlayer} from '../../TestPlayer';
 
 describe('TitanAirScrapping', function() {
-  let card : TitanAirScrapping; let player : Player;
+  let card: TitanAirScrapping;
+  let player: TestPlayer;
 
   beforeEach(function() {
     card = new TitanAirScrapping();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    Game.newInstance('gameid', [player, redPlayer], player);
+    [/* skipped */, player] = testGame(2);
   });
 
-  it('Can\'t act', function() {
+  it('Can not act', function() {
     player.playedCards.push(card);
     expect(card.canAct(player)).is.not.true;
   });
@@ -32,7 +30,7 @@ describe('TitanAirScrapping', function() {
 
     expect(player.getTerraformRating()).to.eq(21);
     expect(card.resourceCount).to.eq(5);
-    expect(card.getVictoryPoints()).to.eq(2);
+    expect(card.getVictoryPoints(player)).to.eq(2);
   });
 
   it('Should act automatically when only one action possible', function() {

@@ -11,10 +11,13 @@ import LoadGameForm from '@/client/components/LoadGameForm.vue';
 import DebugUI from '@/client/components/DebugUI.vue';
 import {SimpleGameModel} from '@/common/models/SimpleGameModel';
 import Help from '@/client/components/help/Help.vue';
+import AdminHome from '@/client/components/admin/AdminHome.vue';
 
-import {$t} from '@/client/directives/i18n';
+import {$t, setTranslationContext} from '@/client/directives/i18n';
 
 import * as constants from '@/common/constants';
+import * as paths from '@/common/app/paths';
+import * as HTTPResponseCode from '@/client/utils/HTTPResponseCode';
 import * as raw_settings from '@/genfiles/settings.json';
 import {SpectatorModel} from '@/common/models/SpectatorModel';
 import {isPlayerId, isSpectatorId} from '@/common/Types';
@@ -23,7 +26,8 @@ import {hasShowModal, showModal, windowHasHTMLDialogElement} from './HTMLDialogE
 const dialogPolyfill = require('dialog-polyfill');
 
 export interface MainAppData {
-    screen: 'create-game-form' |
+    screen: 'admin' |
+            'create-game-form' |
             'cards' |
             'empty' |
             'game-home' |
@@ -60,7 +64,7 @@ export const mainAppSettings = {
     settings: raw_settings,
     isServerSideRequestInProgress: false,
     componentsVisibility: {
-      'milestones_list': true,
+      'milestones': true,
       'awards_list': true,
       'tags_concise': false,
       'pinned_player_0': false,
@@ -88,6 +92,7 @@ export const mainAppSettings = {
     'games-overview': GamesOverview,
     'debug-ui': DebugUI,
     'help': Help,
+    'admin-home': AdminHome,
   },
   'methods': {
     showAlert(message: string, cb: () => void = () => {}): void {
@@ -109,28 +114,29 @@ export const mainAppSettings = {
     },
     setVisibilityState(targetVar: string, isVisible: boolean) {
       if (isVisible === this.getVisibilityState(targetVar)) return;
-      (this as unknown as typeof mainAppSettings.data).componentsVisibility[targetVar] = isVisible;
+      (this as unknown as MainAppData).componentsVisibility[targetVar] = isVisible;
     },
     getVisibilityState(targetVar: string): boolean {
-      return (this as unknown as typeof mainAppSettings.data).componentsVisibility[targetVar] ? true : false;
+      return (this as unknown as MainAppData).componentsVisibility[targetVar] ? true : false;
     },
-    update(path: '/player' | '/spectator'): void {
-      const currentPathname: string = window.location.pathname;
+    update(path: typeof paths.PLAYER | typeof paths.SPECTATOR): void {
+      const currentPathname = getLastPathSegment();
       const xhr = new XMLHttpRequest();
-      const app = this as unknown as typeof mainAppSettings.data;
+      const app = this as unknown as MainAppData;
 
-      const url = '/api' + path + window.location.search.replace('&noredirect', '');
+      const url = 'api/' + path + window.location.search.replace('&noredirect', '');
       xhr.open('GET', url);
       xhr.onerror = function() {
         alert('Error getting game data');
       };
       xhr.onload = function() {
         try {
-          if (xhr.status === 200) {
+          if (xhr.status === HTTPResponseCode.OK) {
             const model = xhr.response as ViewModel;
-            if (path === '/player') {
+            if (path === paths.PLAYER) {
               app.playerView = model as PlayerViewModel;
-            } else if (path === '/spectator') {
+              setTranslationContext(app.playerView);
+            } else if (path === paths.SPECTATOR) {
               app.spectator = model as SpectatorModel;
             }
             app.playerkey++;
@@ -139,24 +145,24 @@ export const mainAppSettings = {
               window.location.search.includes('&noredirect') === false
             ) {
               app.screen = 'the-end';
-              if (currentPathname !== '/the-end') {
+              if (currentPathname !== paths.THE_END) {
                 window.history.replaceState(
                   xhr.response,
                   `${constants.APP_NAME} - Player`,
-                  '/the-end?id=' + model.id,
+                  `${paths.THE_END}?id=${model.id}`,
                 );
               }
             } else {
-              if (path === '/player') {
+              if (path === paths.PLAYER) {
                 app.screen = 'player-home';
-              } else if (path === '/spectator') {
+              } else if (path === paths.SPECTATOR) {
                 app.screen = 'spectator-home';
               }
               if (currentPathname !== path) {
                 window.history.replaceState(
                   xhr.response,
                   `${constants.APP_NAME} - Game`,
-                  path + '?id=' + model.id,
+                  `${path}?id=${model.id}`,
                 );
               }
             }
@@ -171,20 +177,20 @@ export const mainAppSettings = {
       xhr.send();
     },
     updatePlayer() {
-      this.update('/player');
+      this.update(paths.PLAYER);
     },
     updateSpectator: function() {
-      this.update('/spectator');
+      this.update(paths.SPECTATOR);
     },
   },
   mounted() {
     document.title = constants.APP_NAME;
     if (!windowHasHTMLDialogElement()) dialogPolyfill.default.registerDialog(document.getElementById('alert-dialog'));
-    const currentPathname: string = window.location.pathname;
-    const app = this as unknown as (typeof mainAppSettings.data) & (typeof mainAppSettings.methods);
-    if (currentPathname === '/player') {
+    const currentPathname = getLastPathSegment();
+    const app = this as unknown as (MainAppData) & (typeof mainAppSettings.methods);
+    if (currentPathname === paths.PLAYER) {
       app.updatePlayer();
-    } else if (currentPathname === '/the-end') {
+    } else if (currentPathname === paths.THE_END) {
       const urlParams = new URLSearchParams(window.location.search);
       const id = urlParams.get('id') || '';
       if (isPlayerId(id)) {
@@ -194,19 +200,19 @@ export const mainAppSettings = {
       } else {
         alert('Bad id URL parameter.');
       }
-    } else if (currentPathname === '/game') {
+    } else if (currentPathname === paths.GAME) {
       app.screen = 'game-home';
       const xhr = new XMLHttpRequest();
-      xhr.open('GET', '/api/game' + window.location.search);
+      xhr.open('GET', paths.API_GAME + window.location.search);
       xhr.onerror = function() {
         alert('Error getting game data');
       };
       xhr.onload = function() {
-        if (xhr.status === 200) {
+        if (xhr.status === HTTPResponseCode.OK) {
           window.history.replaceState(
             xhr.response,
             `${constants.APP_NAME} - Game`,
-            '/game?id=' + xhr.response.id,
+            `${paths.GAME}?id=${xhr.response.id}`,
           );
           app.game = xhr.response as SimpleGameModel;
         } else {
@@ -215,20 +221,29 @@ export const mainAppSettings = {
       };
       xhr.responseType = 'json';
       xhr.send();
-    } else if (currentPathname === '/games-overview') {
+    } else if (currentPathname === paths.GAMES_OVERVIEW) {
       app.screen = 'games-overview';
-    } else if (currentPathname === '/new-game') {
+    } else if (currentPathname === paths.NEW_GAME) {
       app.screen = 'create-game-form';
-    } else if (currentPathname === '/load') {
+    } else if (currentPathname === paths.LOAD) {
       app.screen = 'load';
-    } else if (currentPathname === '/cards') {
+    } else if (currentPathname === paths.CARDS) {
       app.screen = 'cards';
-    } else if (currentPathname === '/help') {
+    } else if (currentPathname === paths.HELP) {
       app.screen = 'help';
-    } else if (currentPathname === '/spectator') {
+    } else if (currentPathname === paths.SPECTATOR) {
       app.updateSpectator();
+    } else if (currentPathname === paths.ADMIN) {
+      app.screen = 'admin';
     } else {
       app.screen = 'start-screen';
     }
   },
 };
+
+// NOTE: this simplistic truncation to the last segment might cause issues if
+// this page starts supporting paths more than one level deep.
+function getLastPathSegment() {
+  // Leave only the last part of /path
+  return window.location.pathname.replace(/.*\//g, '');
+}

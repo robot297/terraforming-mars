@@ -1,24 +1,28 @@
 import {expect} from 'chai';
-import {TopsoilContract} from '../../../src/cards/promo/TopsoilContract';
-import {Player} from '../../../src/Player';
-import {Tardigrades} from '../../../src/cards/base/Tardigrades';
-import {Ants} from '../../../src/cards/base/Ants';
-import {Game} from '../../../src/Game';
-import {AerobrakedAmmoniaAsteroid} from '../../../src/cards/base/AerobrakedAmmoniaAsteroid';
-import {TestPlayers} from '../../TestPlayers';
+import {TopsoilContract} from '../../../src/server/cards/promo/TopsoilContract';
+import {Tardigrades} from '../../../src/server/cards/base/Tardigrades';
+import {Ants} from '../../../src/server/cards/base/Ants';
+import {Game} from '../../../src/server/Game';
+import {AerobrakedAmmoniaAsteroid} from '../../../src/server/cards/base/AerobrakedAmmoniaAsteroid';
+import {TestPlayer} from '../../TestPlayer';
+import {runAllActions} from '../../TestingUtils';
+import {testGame} from '../../TestGame';
 
 describe('TopsoilContract', function() {
-  let card : TopsoilContract; let player : Player; let player2 : Player;
+  let card: TopsoilContract;
+  let player: TestPlayer;
+  let player2: TestPlayer;
+  let game: Game;
 
   beforeEach(function() {
     card = new TopsoilContract();
-    player = TestPlayers.BLUE.newPlayer();
-    player2 = TestPlayers.RED.newPlayer();
-    Game.newInstance('gameid', [player, player2], player);
+    [game, player, player2] = testGame(2);
   });
 
   it('Can play', function() {
     card.play(player);
+    runAllActions(game);
+
     expect(player.plants).to.eq(3);
   });
 
@@ -29,10 +33,12 @@ describe('TopsoilContract', function() {
     const tardigrades = new Tardigrades();
     player.playedCards.push(tardigrades);
     tardigrades.action(player);
+    runAllActions(game);
     expect(player.megaCredits).to.eq(1);
 
     const aerobrakedAmmoniaAsteroid = new AerobrakedAmmoniaAsteroid();
     aerobrakedAmmoniaAsteroid.play(player);
+    runAllActions(game);
     expect(tardigrades.resourceCount).to.eq(3);
     expect(player.megaCredits).to.eq(3);
 
@@ -40,6 +46,7 @@ describe('TopsoilContract', function() {
     const ants = new Ants();
     player2.playedCards.push(ants);
     ants.action(player2);
+    runAllActions(game);
     expect(player.megaCredits).to.eq(3);
   });
 });

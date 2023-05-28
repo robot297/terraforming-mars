@@ -1,29 +1,28 @@
 import {expect} from 'chai';
-import {Research} from '../../../src/cards/base/Research';
-import {SolarWindPower} from '../../../src/cards/base/SolarWindPower';
-import {CoronaExtractor} from '../../../src/cards/colonies/CoronaExtractor';
-import {AgricolaInc} from '../../../src/cards/community/AgricolaInc';
-import {Game} from '../../../src/Game';
-import {Player} from '../../../src/Player';
-import {Resources} from '../../../src/common/Resources';
-import {TestPlayers} from '../../TestPlayers';
+import {Research} from '../../../src/server/cards/base/Research';
+import {SolarWindPower} from '../../../src/server/cards/base/SolarWindPower';
+import {CoronaExtractor} from '../../../src/server/cards/colonies/CoronaExtractor';
+import {AgricolaInc} from '../../../src/server/cards/community/AgricolaInc';
+import {testGame} from '../../TestGame';
+import {TestPlayer} from '../../TestPlayer';
+import {Units} from '../../../src/common/Units';
 
 describe('AgricolaInc', function() {
-  let card : AgricolaInc; let player : Player;
+  let card: AgricolaInc;
+  let player: TestPlayer;
 
   beforeEach(function() {
     card = new AgricolaInc();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    Game.newInstance('gameid', [player, redPlayer], player);
+    [/* skipped */, player] = testGame(2);
 
     card.play(player);
-    player.corporationCard = card;
+    player.setCorporationForTest(card);
   });
 
   it('Starts with correct production', function() {
-    expect(player.getProduction(Resources.MEGACREDITS)).to.eq(1);
-    expect(player.getProduction(Resources.PLANTS)).to.eq(1);
+    expect(player.production.asUnits()).deep.eq(Units.of({megacredits: 1, plants: 1, heat: 1}));
+    expect(player.production.megacredits).to.eq(1);
+    expect(player.production.plants).to.eq(1);
   });
 
   it('Scores endgame VP correctly', function() {

@@ -1,15 +1,10 @@
-import {Game} from '../../../src/Game';
-import {setCustomGameOptions} from '../../TestingUtils';
-import {TestPlayers} from '../../TestPlayers';
-import {TestPlayer} from '../../TestPlayer';
-import {HE3FusionPlant} from '../../../src/cards/moon/HE3FusionPlant';
 import {expect} from 'chai';
-import {Resources} from '../../../src/common/Resources';
-import {IMoonData} from '../../../src/moon/IMoonData';
-import {MoonExpansion} from '../../../src/moon/MoonExpansion';
+import {Game} from '../../../src/server/Game';
+import {TestPlayer} from '../../TestPlayer';
+import {HE3FusionPlant} from '../../../src/server/cards/moon/HE3FusionPlant';
+import {IMoonData} from '../../../src/server/moon/IMoonData';
+import {MoonExpansion} from '../../../src/server/moon/MoonExpansion';
 import {TileType} from '../../../src/common/TileType';
-
-const MOON_OPTIONS = setCustomGameOptions({moonExpansion: true});
 
 describe('HE3FusionPlant', () => {
   let player: TestPlayer;
@@ -17,8 +12,8 @@ describe('HE3FusionPlant', () => {
   let moonData: IMoonData;
 
   beforeEach(() => {
-    player = TestPlayers.BLUE.newPlayer();
-    const game = Game.newInstance('gameid', [player], player, MOON_OPTIONS);
+    player = TestPlayer.BLUE.newPlayer();
+    const game = Game.newInstance('gameid', [player], player, {moonExpansion: true});
     card = new HE3FusionPlant();
     moonData = MoonExpansion.moonData(game);
   });
@@ -35,19 +30,19 @@ describe('HE3FusionPlant', () => {
   });
 
   it('play', () => {
-    player.setProductionForTest({energy: 0});
+    player.production.override({energy: 0});
     card.play(player);
-    expect(player.getProduction(Resources.ENERGY)).eq(0);
+    expect(player.production.energy).eq(0);
 
-    player.setProductionForTest({energy: 0});
+    player.production.override({energy: 0});
     moonData.moon.getSpace('m06')!.tile = {tileType: TileType.MOON_MINE};
     card.play(player);
-    expect(player.getProduction(Resources.ENERGY)).eq(1);
+    expect(player.production.energy).eq(1);
 
-    player.setProductionForTest({energy: 0});
+    player.production.override({energy: 0});
     moonData.moon.getSpace('m07')!.tile = {tileType: TileType.MOON_MINE};
     card.play(player);
-    expect(player.getProduction(Resources.ENERGY)).eq(2);
+    expect(player.production.energy).eq(2);
   });
 });
 

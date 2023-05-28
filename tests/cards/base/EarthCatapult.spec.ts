@@ -1,13 +1,15 @@
 import {expect} from 'chai';
-import {EarthCatapult} from '../../../src/cards/base/EarthCatapult';
+import {testGame} from '../../TestGame';
+import {EarthCatapult} from '../../../src/server/cards/base/EarthCatapult';
 
 describe('EarthCatapult', function() {
   it('Should play', function() {
+    const [, player] = testGame(1);
     const card = new EarthCatapult();
+    const action = card.play(player);
 
-    const action = card.play();
     expect(action).is.undefined;
-    expect(card.getVictoryPoints()).to.eq(2);
+    expect(card.getVictoryPoints(player)).to.eq(2);
     expect(card.getCardDiscount()).to.eq(2);
   });
 });

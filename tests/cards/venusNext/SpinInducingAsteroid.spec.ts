@@ -1,35 +1,36 @@
 import {expect} from 'chai';
-import {MorningStarInc} from '../../../src/cards/venusNext/MorningStarInc';
-import {SpinInducingAsteroid} from '../../../src/cards/venusNext/SpinInducingAsteroid';
-import {Game} from '../../../src/Game';
-import {Player} from '../../../src/Player';
-import {TestPlayers} from '../../TestPlayers';
+import {setVenusScaleLevel} from '../../TestingUtils';
+import {MorningStarInc} from '../../../src/server/cards/venusNext/MorningStarInc';
+import {SpinInducingAsteroid} from '../../../src/server/cards/venusNext/SpinInducingAsteroid';
+import {Game} from '../../../src/server/Game';
+import {TestPlayer} from '../../TestPlayer';
+import {testGame} from '../../TestGame';
 
 describe('SpinInducingAsteroid', function() {
-  let card : SpinInducingAsteroid; let player : Player; let game : Game;
+  let card: SpinInducingAsteroid;
+  let player: TestPlayer;
+  let game: Game;
 
   beforeEach(function() {
     card = new SpinInducingAsteroid();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('gameid', [player, redPlayer], player);
+    [game, player] = testGame(2);
   });
 
-  it('Can\'t play', function() {
-    (game as any).venusScaleLevel = 12;
-    expect(player.canPlayIgnoringCost(card)).is.not.true;
+  it('Can not play', function() {
+    setVenusScaleLevel(game, 12);
+    expect(player.simpleCanPlay(card)).is.not.true;
   });
 
   it('Should play', function() {
-    expect(player.canPlayIgnoringCost(card)).is.true;
+    expect(player.simpleCanPlay(card)).is.true;
     card.play(player);
     expect(game.getVenusScaleLevel()).to.eq(4);
   });
 
   it('Should play with Morning Star', function() {
-    player.corporationCard = new MorningStarInc();
-    (game as any).venusScaleLevel = 12;
-    expect(player.canPlayIgnoringCost(card)).is.true;
+    player.setCorporationForTest(new MorningStarInc());
+    setVenusScaleLevel(game, 12);
+    expect(player.simpleCanPlay(card)).is.true;
 
     card.play(player);
     expect(game.getVenusScaleLevel()).to.eq(16);

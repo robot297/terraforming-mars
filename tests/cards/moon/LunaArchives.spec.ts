@@ -1,20 +1,17 @@
-import {Game} from '../../../src/Game';
-import {setCustomGameOptions} from '../../TestingUtils';
-import {TestPlayers} from '../../TestPlayers';
-import {LunaArchives} from '../../../src/cards/moon/LunaArchives';
-import {EarthEmbassy} from '../../../src/cards/moon/EarthEmbassy';
 import {expect} from 'chai';
+import {Game} from '../../../src/server/Game';
+import {runAllActions} from '../../TestingUtils';
+import {LunaArchives} from '../../../src/server/cards/moon/LunaArchives';
+import {EarthEmbassy} from '../../../src/server/cards/moon/EarthEmbassy';
 import {TestPlayer} from '../../TestPlayer';
-
-const MOON_OPTIONS = setCustomGameOptions({moonExpansion: true});
 
 describe('LunaArchives', () => {
   let player: TestPlayer;
   let card: LunaArchives;
 
   beforeEach(() => {
-    player = TestPlayers.BLUE.newPlayer();
-    Game.newInstance('gameid', [player], player, MOON_OPTIONS);
+    player = TestPlayer.BLUE.newPlayer();
+    Game.newInstance('gameid', [player], player, {moonExpansion: true});
     card = new LunaArchives();
     player.playedCards.push(card);
   });
@@ -27,6 +24,7 @@ describe('LunaArchives', () => {
 
     player.tagsForTest = {moon: 5};
     card.action(player);
+    runAllActions(player.game);
     expect(card.resourceCount).eq(5);
     expect(player.getSpendableScienceResources()).eq(5);
   });

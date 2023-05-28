@@ -1,16 +1,16 @@
 import {expect} from 'chai';
-import {Game} from '../../src/Game';
-import {Resources} from '../../src/common/Resources';
-import {Productivity} from '../../src/turmoil/globalEvents/Productivity';
-import {Kelvinists} from '../../src/turmoil/parties/Kelvinists';
-import {Turmoil} from '../../src/turmoil/Turmoil';
-import {TestPlayers} from '../TestPlayers';
+import {Game} from '../../src/server/Game';
+import {Resource} from '../../src/common/Resource';
+import {Productivity} from '../../src/server/turmoil/globalEvents/Productivity';
+import {Kelvinists} from '../../src/server/turmoil/parties/Kelvinists';
+import {Turmoil} from '../../src/server/turmoil/Turmoil';
+import {TestPlayer} from '../TestPlayer';
 
 describe('Productivity', function() {
   it('resolve play', function() {
     const card = new Productivity();
-    const player = TestPlayers.BLUE.newPlayer();
-    const player2 = TestPlayers.RED.newPlayer();
+    const player = TestPlayer.BLUE.newPlayer();
+    const player2 = TestPlayer.RED.newPlayer();
     const game = Game.newInstance('gameid', [player, player2], player);
     const turmoil = Turmoil.newInstance(game);
 
@@ -18,14 +18,14 @@ describe('Productivity', function() {
     turmoil.chairman = player2.id;
     turmoil.dominantParty = new Kelvinists();
     turmoil.dominantParty.partyLeader = player2.id;
-    turmoil.dominantParty.delegates.push(player2.id);
-    turmoil.dominantParty.delegates.push(player2.id);
+    turmoil.dominantParty.delegates.add(player2.id);
+    turmoil.dominantParty.delegates.add(player2.id);
 
-    player.addProduction(Resources.STEEL, 3);
-    player2.addProduction(Resources.STEEL, 3);
+    player.production.add(Resource.STEEL, 3);
+    player2.production.add(Resource.STEEL, 3);
 
     card.resolve(game, turmoil);
-    expect(player.getResource(Resources.STEEL)).to.eq(3);
-    expect(player2.getResource(Resources.STEEL)).to.eq(6);
+    expect(player.steel).to.eq(3);
+    expect(player2.steel).to.eq(6);
   });
 });

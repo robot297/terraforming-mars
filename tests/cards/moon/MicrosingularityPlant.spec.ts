@@ -1,24 +1,19 @@
-import {Game} from '../../../src/Game';
-import {Player} from '../../../src/Player';
-import {setCustomGameOptions} from '../../TestingUtils';
-import {TestPlayers} from '../../TestPlayers';
-import {MicrosingularityPlant} from '../../../src/cards/moon/MicrosingularityPlant';
+import {Game} from '../../../src/server/Game';
+import {TestPlayer} from '../../TestPlayer';
+import {MicrosingularityPlant} from '../../../src/server/cards/moon/MicrosingularityPlant';
 import {expect} from 'chai';
-import {MoonExpansion} from '../../../src/moon/MoonExpansion';
-import {IMoonData} from '../../../src/moon/IMoonData';
-import {Resources} from '../../../src/common/Resources';
+import {MoonExpansion} from '../../../src/server/moon/MoonExpansion';
+import {IMoonData} from '../../../src/server/moon/IMoonData';
 import {TileType} from '../../../src/common/TileType';
 
-const MOON_OPTIONS = setCustomGameOptions({moonExpansion: true});
-
 describe('MicrosingularityPlant', () => {
-  let player: Player;
+  let player: TestPlayer;
   let card: MicrosingularityPlant;
   let moonData: IMoonData;
 
   beforeEach(() => {
-    player = TestPlayers.BLUE.newPlayer();
-    const game = Game.newInstance('gameid', [player], player, MOON_OPTIONS);
+    player = TestPlayer.BLUE.newPlayer();
+    const game = Game.newInstance('gameid', [player], player, {moonExpansion: true});
     card = new MicrosingularityPlant();
     moonData = MoonExpansion.moonData(game);
   });
@@ -30,8 +25,8 @@ describe('MicrosingularityPlant', () => {
     const space1 = moonData.moon.getAvailableSpacesOnLand(player)[0];
     const space2 = moonData.moon.getAvailableSpacesOnLand(player)[1];
 
-    space1.tile = {tileType: TileType.MOON_COLONY};
-    space2.tile = {tileType: TileType.MOON_COLONY};
+    space1.tile = {tileType: TileType.MOON_HABITAT};
+    space2.tile = {tileType: TileType.MOON_HABITAT};
     expect(player.getPlayableCards()).does.include(card);
 
     space2.tile = {tileType: TileType.MOON_ROAD};
@@ -39,11 +34,11 @@ describe('MicrosingularityPlant', () => {
   });
 
   it('play', () => {
-    expect(player.getProduction(Resources.ENERGY)).eq(0);
+    expect(player.production.energy).eq(0);
 
     card.play(player);
 
-    expect(player.getProduction(Resources.ENERGY)).eq(2);
+    expect(player.production.energy).eq(2);
   });
 });
 

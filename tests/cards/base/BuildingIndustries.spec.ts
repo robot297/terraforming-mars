@@ -1,27 +1,28 @@
 import {expect} from 'chai';
-import {BuildingIndustries} from '../../../src/cards/base/BuildingIndustries';
-import {Player} from '../../../src/Player';
-import {Resources} from '../../../src/common/Resources';
-import {TestPlayers} from '../../TestPlayers';
+import {BuildingIndustries} from '../../../src/server/cards/base/BuildingIndustries';
+import {Resource} from '../../../src/common/Resource';
+import {TestPlayer} from '../../TestPlayer';
+import {testGame} from '../../TestGame';
 
 describe('BuildingIndustries', function() {
-  let card : BuildingIndustries; let player : Player;
+  let card: BuildingIndustries;
+  let player: TestPlayer;
 
   beforeEach(function() {
     card = new BuildingIndustries();
-    player = TestPlayers.BLUE.newPlayer();
+    [/* skipped */, player] = testGame(1);
   });
 
-  it('Can\'t play', function() {
+  it('Can not play', function() {
     expect(card.canPlay(player)).is.not.true;
   });
 
   it('Should play', function() {
-    player.addProduction(Resources.ENERGY, 1);
+    player.production.add(Resource.ENERGY, 1);
     expect(card.canPlay(player)).is.true;
 
     card.play(player);
-    expect(player.getProduction(Resources.ENERGY)).to.eq(0);
-    expect(player.getProduction(Resources.STEEL)).to.eq(2);
+    expect(player.production.energy).to.eq(0);
+    expect(player.production.steel).to.eq(2);
   });
 });

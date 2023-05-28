@@ -1,18 +1,14 @@
-import {Game} from '../../../src/Game';
-import {finishGeneration, setCustomGameOptions} from '../../TestingUtils';
-import {TestPlayers} from '../../TestPlayers';
-import {LunaProjectOffice} from '../../../src/cards/moon/LunaProjectOffice';
+import {cast, finishGeneration} from '../../TestingUtils';
+import {LunaProjectOffice} from '../../../src/server/cards/moon/LunaProjectOffice';
 import {expect} from 'chai';
-import {SelectCard} from '../../../src/inputs/SelectCard';
-import {IProjectCard} from '../../../src/cards/IProjectCard';
-import {Player} from '../../../src/Player';
-
-const MOON_OPTIONS = setCustomGameOptions({moonExpansion: true});
+import {SelectCard} from '../../../src/server/inputs/SelectCard';
+import {IProjectCard} from '../../../src/server/cards/IProjectCard';
+import {Player} from '../../../src/server/Player';
+import {testGame} from '../../TestGame';
 
 describe('LunaProjectOffice', () => {
   it('can play', () => {
-    const player = TestPlayers.BLUE.newPlayer();
-    Game.newInstance('gameid', [player], player, MOON_OPTIONS);
+    const [, player] = testGame(1, {moonExpansion: true});
     const card = new LunaProjectOffice();
 
     player.cardsInHand = [card];
@@ -26,15 +22,9 @@ describe('LunaProjectOffice', () => {
   });
 
   it('play - solo', function() {
-    const player = TestPlayers.BLUE.newPlayer();
-    const game = Game.newInstance(
-      'gameid',
-      [player],
-      player,
-      setCustomGameOptions({
-        moonExpansion: true,
-        turmoilExtension: false,
-      }));
+    const [game, player] = testGame(1, {
+      moonExpansion: true,
+    });
 
     game.generation = 10;
     const card = new LunaProjectOffice();
@@ -73,17 +63,11 @@ describe('LunaProjectOffice', () => {
   // This test is almost exactly the same as the solo test, but they take
   // different paths in the code.
   it('play - 2 player - draft', function() {
-    const player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    const game = Game.newInstance(
-      'gameid',
-      [player, redPlayer],
-      player,
-      setCustomGameOptions({
-        moonExpansion: true,
-        draftVariant: true,
-        turmoilExtension: false,
-      }));
+    const [game, player, player2] = testGame(2, {
+      moonExpansion: true,
+      draftVariant: true,
+      turmoilExtension: false,
+    });
 
     game.generation = 10;
     const card = new LunaProjectOffice();
@@ -100,7 +84,7 @@ describe('LunaProjectOffice', () => {
     expect(getWaitingFor(player).cards).has.length(5);
     expect(getWaitingFor(player).config.min).eq(2);
     expect(getWaitingFor(player).config.max).eq(2);
-    expect(getWaitingFor(redPlayer).cards).has.length(4);
+    expect(getWaitingFor(player2).cards).has.length(4);
 
     // End the generation. Player will draw 5 cards this generation.
     // Since this is the second generation after playing LPO, it is also the last.
@@ -111,7 +95,7 @@ describe('LunaProjectOffice', () => {
     expect(getWaitingFor(player).cards).has.length(5);
     expect(getWaitingFor(player).config.min).eq(2);
     expect(getWaitingFor(player).config.max).eq(2);
-    expect(getWaitingFor(redPlayer).cards).has.length(4);
+    expect(getWaitingFor(player2).cards).has.length(4);
     expect(LunaProjectOffice.isActive(player)).is.true;
 
     // End the generation. Player will draw 4 cards.
@@ -123,23 +107,16 @@ describe('LunaProjectOffice', () => {
     expect(getWaitingFor(player).cards).has.length(4);
     expect(getWaitingFor(player).config.min).eq(1);
     expect(getWaitingFor(player).config.max).eq(1);
-    expect(getWaitingFor(redPlayer).cards).has.length(4);
+    expect(getWaitingFor(player2).cards).has.length(4);
   });
 
   // This test is almost exactly the same as the solo test, but it takes
   // different paths in the code.
   it('play - 2 player - no draft', function() {
-    const player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    const game = Game.newInstance(
-      'gameid',
-      [player, redPlayer],
-      player,
-      setCustomGameOptions({
-        moonExpansion: true,
-        draftVariant: false,
-        turmoilExtension: false,
-      }));
+    const [game, player, player2] = testGame(2, {
+      moonExpansion: true,
+      draftVariant: false,
+    });
 
     game.generation = 10;
     const card = new LunaProjectOffice();
@@ -156,7 +133,7 @@ describe('LunaProjectOffice', () => {
     expect(LunaProjectOffice.isActive(player)).is.true;
     expect(getWaitingFor(player).cards).has.length(5);
     expect(getWaitingFor(player).config.min).eq(0);
-    expect(getWaitingFor(redPlayer).cards).has.length(4);
+    expect(getWaitingFor(player2).cards).has.length(4);
 
     // End the generation. Player will draw 5 cards and no resources on
     // this card, so the generation after the player will only draw 4 cards.
@@ -166,21 +143,18 @@ describe('LunaProjectOffice', () => {
 
     expect(getWaitingFor(player).cards).has.length(5);
     expect(getWaitingFor(player).config.min).eq(0);
-    expect(getWaitingFor(redPlayer).cards).has.length(4);
+    expect(getWaitingFor(player2).cards).has.length(4);
 
-    // End the generation. Player will draw 4 cards.
 
     finishGeneration(game);
     expect(game.getGeneration()).to.eq(13);
 
     expect(getWaitingFor(player).cards).has.length(4);
     expect(getWaitingFor(player).config.min).eq(0);
-    expect(getWaitingFor(redPlayer).cards).has.length(4);
+    expect(getWaitingFor(player2).cards).has.length(4);
   });
 });
 
 function getWaitingFor(player: Player): SelectCard<IProjectCard> {
-  const action = player.getWaitingFor();
-  expect(action).instanceof(SelectCard);
-  return action as SelectCard<IProjectCard>;
+  return cast(player.getWaitingFor(), SelectCard<IProjectCard>);
 }

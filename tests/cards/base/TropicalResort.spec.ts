@@ -1,18 +1,18 @@
 
 import {expect} from 'chai';
-import {TropicalResort} from '../../../src/cards/base/TropicalResort';
-import {Resources} from '../../../src/common/Resources';
-import {TestPlayers} from '../../TestPlayers';
+import {TropicalResort} from '../../../src/server/cards/base/TropicalResort';
+import {Resource} from '../../../src/common/Resource';
+import {testGame} from '../../TestGame';
 
 describe('TropicalResort', function() {
   it('Should play', function() {
     const card = new TropicalResort();
-    const player = TestPlayers.BLUE.newPlayer();
-    player.addProduction(Resources.HEAT, 2);
+    const [, player] = testGame(1);
+    player.production.add(Resource.HEAT, 2);
     const action = card.play(player);
     expect(action).is.undefined;
-    expect(player.getProduction(Resources.HEAT)).to.eq(0);
-    expect(player.getProduction(Resources.MEGACREDITS)).to.eq(3);
-    expect(card.getVictoryPoints()).to.eq(2);
+    expect(player.production.heat).to.eq(0);
+    expect(player.production.megacredits).to.eq(3);
+    expect(card.getVictoryPoints(player)).to.eq(2);
   });
 });

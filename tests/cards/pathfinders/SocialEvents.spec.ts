@@ -1,12 +1,12 @@
 import {expect} from 'chai';
-import {SocialEvents} from '../../../src/cards/pathfinders/SocialEvents';
-import {Game} from '../../../src/Game';
+import {SocialEvents} from '../../../src/server/cards/pathfinders/SocialEvents';
+import {Game} from '../../../src/server/Game';
 import {Phase} from '../../../src/common/Phase';
 import {TestPlayer} from '../../TestPlayer';
-import {getTestPlayer, newTestGame} from '../../TestGame';
-import {Reds} from '../../../src/turmoil/parties/Reds';
-import {Greens} from '../../../src/turmoil/parties/Greens';
-import {Turmoil} from '../../../src/turmoil/Turmoil';
+import {testGame} from '../../TestGame';
+import {Reds} from '../../../src/server/turmoil/parties/Reds';
+import {Greens} from '../../../src/server/turmoil/parties/Greens';
+import {Turmoil} from '../../../src/server/turmoil/Turmoil';
 import {runAllActions} from '../../TestingUtils';
 
 // This card is only difficult when Reds are in power, so these tests set up for that.
@@ -19,8 +19,7 @@ describe('SocialEvents', function() {
 
   beforeEach(function() {
     card = new SocialEvents();
-    game = newTestGame(1, {turmoilExtension: true});
-    player = getTestPlayer(game, 0);
+    [game, player] = testGame(1, {turmoilExtension: true});
     turmoil = Turmoil.getTurmoil(game);
     turmoil.rulingParty = new Greens();
     game.phase = Phase.ACTION;

@@ -1,50 +1,53 @@
 import {expect} from 'chai';
-import {Research} from '../../../src/cards/base/Research';
-import {Tardigrades} from '../../../src/cards/base/Tardigrades';
-import {Extremophiles} from '../../../src/cards/venusNext/Extremophiles';
-import {Game} from '../../../src/Game';
-import {SelectCard} from '../../../src/inputs/SelectCard';
-import {Player} from '../../../src/Player';
-import {TestPlayers} from '../../TestPlayers';
+import {cast, runAllActions} from '../../TestingUtils';
+import {Research} from '../../../src/server/cards/base/Research';
+import {Tardigrades} from '../../../src/server/cards/base/Tardigrades';
+import {Extremophiles} from '../../../src/server/cards/venusNext/Extremophiles';
+import {testGame} from '../../TestGame';
+import {SelectCard} from '../../../src/server/inputs/SelectCard';
+import {TestPlayer} from '../../TestPlayer';
+import {Game} from '../../../src/server/Game';
 
 describe('Extremophiles', function() {
-  let card : Extremophiles; let player : Player;
+  let card: Extremophiles;
+  let player: TestPlayer;
+  let game: Game;
 
   beforeEach(function() {
     card = new Extremophiles();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    Game.newInstance('gameid', [player, redPlayer], player);
+    [game, player] = testGame(2);
   });
 
-  it('Can\'t play', function() {
-    expect(player.canPlayIgnoringCost(card)).is.not.true;
+  it('Can not play', function() {
+    expect(player.simpleCanPlay(card)).is.not.true;
   });
 
   it('Should play', function() {
     player.playedCards.push(new Research());
-    expect(player.canPlayIgnoringCost(card)).is.true;
-    const action = card.play();
+    expect(player.simpleCanPlay(card)).is.true;
+    const action = card.play(player);
     expect(action).is.undefined;
   });
 
   it('Should act', function() {
     player.playedCards.push(card);
     card.action(player);
+    runAllActions(game);
     expect(card.resourceCount).to.eq(1);
   });
 
   it('Should act - multiple targets', function() {
     player.playedCards.push(card, new Tardigrades());
-    const action = card.action(player);
-    expect(action).instanceOf(SelectCard);
+    card.action(player);
+    runAllActions(game);
+    const action = cast(player.popWaitingFor(), SelectCard);
+    action.cb([card]);
 
-        action!.cb([card]);
-        expect(card.resourceCount).to.eq(1);
+    expect(card.resourceCount).to.eq(1);
   });
 
   it('Gives victory points', function() {
     player.addResourceTo(card, 7);
-    expect(card.getVictoryPoints()).to.eq(2);
+    expect(card.getVictoryPoints(player)).to.eq(2);
   });
 });

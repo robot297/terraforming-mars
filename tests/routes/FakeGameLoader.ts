@@ -1,36 +1,41 @@
-import {GameIdLedger, IGameLoader} from '../../src/database/IGameLoader';
-import {Game} from '../../src/Game';
-import {PlayerId, SpectatorId} from '../../src/common/Types';
+import {IGameLoader} from '../../src/server/database/IGameLoader';
+import {GameIdLedger} from '../../src/server/database/IDatabase';
+import {Game} from '../../src/server/Game';
+import {GameId, isGameId, PlayerId, SpectatorId} from '../../src/common/Types';
 
 export class FakeGameLoader implements IGameLoader {
-  private games: Map<string, Game> = new Map();
+  private games: Map<GameId, Game> = new Map();
   add(game: Game): Promise<void> {
     this.games.set(game.id, game);
     return Promise.resolve();
   }
-  async getLoadedGameIds(): Promise<Array<GameIdLedger>> {
+  async getIds(): Promise<Array<GameIdLedger>> {
     return Array.from(this.games.keys())
-      .map((id) => {
-        return {id: id, participants: []};
+      .map((gameId) => {
+        return {gameId: gameId, participantIds: []};
       });
   }
-  async getByGameId(gameId: string, _bypassCache: boolean): Promise<Game | undefined> {
-    return this.games.get(gameId);
-  }
-  async getByParticipantId(id: PlayerId | SpectatorId): Promise<Game | undefined> {
+  public getGame(id: GameId | PlayerId | SpectatorId): Promise<Game | undefined> {
+    if (isGameId(id)) return Promise.resolve(this.games.get(id));
+
     for (const game of Array.from(this.games.values())) {
-      for (const player of game.getPlayersInGenerationOrder()) {
-        if (player.id === id) {
-          return game;
-        }
-      }
-      if (game.spectatorId === id) {
-        return game;
-      }
+      const matches = game.getPlayersInGenerationOrder().some((player) => player.id === id) || game.spectatorId === id;
+      if (matches) return Promise.resolve(game);
     }
-    return undefined;
+    return Promise.resolve(undefined);
   }
   restoreGameAt(_gameId: string, _saveId: number): Promise<Game> {
     throw new Error('Method not implemented.');
+  }
+  public mark() {
+  }
+  public completeGame(_game: Game): Promise<void> {
+    return Promise.resolve(undefined);
+  }
+  public saveGame(_game: Game) {
+    return Promise.resolve(undefined);
+  }
+  public maintenance(): Promise<void> {
+    return Promise.resolve();
   }
 }

@@ -1,24 +1,22 @@
 import {expect} from 'chai';
-import {MartianNatureWonders} from '../../../src/cards/pathfinders/MartianNatureWonders';
-import {Game} from '../../../src/Game';
+import {MartianNatureWonders} from '../../../src/server/cards/pathfinders/MartianNatureWonders';
+import {Game} from '../../../src/server/Game';
 import {TestPlayer} from '../../TestPlayer';
-import {TestPlayers} from '../../TestPlayers';
 import {SpaceBonus} from '../../../src/common/boards/SpaceBonus';
-import {LunarObservationPost} from '../../../src/cards/moon/LunarObservationPost';
-import {maxOutOceans, runAllActions} from '../../TestingUtils';
+import {LunarObservationPost} from '../../../src/server/cards/moon/LunarObservationPost';
+import {cast, maxOutOceans, runAllActions} from '../../TestingUtils';
 import {TileType} from '../../../src/common/TileType';
+import {SelectSpace} from '../../../src/server/inputs/SelectSpace';
+import {testGame} from '../../TestGame';
 
 describe('MartianNatureWonders', function() {
   let card: MartianNatureWonders;
   let player: TestPlayer;
-  let player2: TestPlayer;
   let game: Game;
 
   beforeEach(function() {
     card = new MartianNatureWonders();
-    player = TestPlayers.BLUE.newPlayer();
-    player2 = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('gameid', [player, player2], player);
+    [game, player] = testGame(2);
   });
 
   it('play', function() {
@@ -37,7 +35,7 @@ describe('MartianNatureWonders', function() {
     player.megaCredits = 0;
     player.steel = 0;
 
-    const selectSpace = card.play(player);
+    const selectSpace = cast(card.play(player), SelectSpace);
     selectSpace.cb(space);
     runAllActions(player.game);
 

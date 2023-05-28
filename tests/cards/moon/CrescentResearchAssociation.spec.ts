@@ -1,13 +1,10 @@
-import {Game} from '../../../src/Game';
-import {setCustomGameOptions} from '../../TestingUtils';
-import {CrescentResearchAssociation} from '../../../src/cards/moon/CrescentResearchAssociation';
 import {expect} from 'chai';
+import {Game} from '../../../src/server/Game';
+import {setOxygenLevel} from '../../TestingUtils';
+import {CrescentResearchAssociation} from '../../../src/server/cards/moon/CrescentResearchAssociation';
 import {TestPlayer} from '../../TestPlayer';
-import {TestPlayers} from '../../TestPlayers';
-import {MareNectarisMine} from '../../../src/cards/moon/MareNectarisMine';
-import {Predators} from '../../../src/cards/base/Predators';
-
-const MOON_OPTIONS = setCustomGameOptions({moonExpansion: true});
+import {MareNectarisMine} from '../../../src/server/cards/moon/MareNectarisMine';
+import {Predators} from '../../../src/server/cards/base/Predators';
 
 describe('CrescentResearchAssociation', () => {
   let player: TestPlayer;
@@ -15,8 +12,8 @@ describe('CrescentResearchAssociation', () => {
   let card: CrescentResearchAssociation;
 
   beforeEach(() => {
-    player = TestPlayers.BLUE.newPlayer();
-    game = Game.newInstance('gameid', [player], player, MOON_OPTIONS);
+    player = TestPlayer.BLUE.newPlayer();
+    game = Game.newInstance('gameid', [player], player, {moonExpansion: true});
     card = new CrescentResearchAssociation();
   });
 
@@ -28,10 +25,10 @@ describe('CrescentResearchAssociation', () => {
 
     // Additional card requirements.
     player.titanium = 1;
-    (game as any).oxygenLevel = 14;
+    setOxygenLevel(game, 14);
 
     player.cardsInHand = [mareNectarisMine, predators];
-    player.corporationCard = card;
+    player.setCorporationForTest(card);
 
     player.tagsForTest = {moon: 0};
     player.megaCredits = 14;
@@ -55,6 +52,7 @@ describe('CrescentResearchAssociation', () => {
   });
 
   it('getVictoryPoints', () => {
+    player.playedCards.push(card);
     player.tagsForTest = {moon: 0};
     expect(card.getVictoryPoints(player)).eq(0);
     player.tagsForTest = {moon: 1};

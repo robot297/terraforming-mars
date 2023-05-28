@@ -1,33 +1,33 @@
 import {expect} from 'chai';
-import {MiningRights} from '../../../src/cards/base/MiningRights';
-import {Game} from '../../../src/Game';
-import {OrOptions} from '../../../src/inputs/OrOptions';
-import {SelectSpace} from '../../../src/inputs/SelectSpace';
+import {MiningRights} from '../../../src/server/cards/base/MiningRights';
+import {Game} from '../../../src/server/Game';
+import {OrOptions} from '../../../src/server/inputs/OrOptions';
+import {SelectSpace} from '../../../src/server/inputs/SelectSpace';
 import {TestPlayer} from '../../TestPlayer';
 import {SpaceBonus} from '../../../src/common/boards/SpaceBonus';
 import {TileType} from '../../../src/common/TileType';
-import {TestPlayers} from '../../TestPlayers';
-import {ISpace} from '../../../src/boards/ISpace';
+import {ISpace} from '../../../src/server/boards/ISpace';
 import {runAllActions, cast} from '../../TestingUtils';
-import {RoboticWorkforce} from '../../../src/cards/base/RoboticWorkforce';
-import {SelectCard} from '../../../src/inputs/SelectCard';
+import {RoboticWorkforce} from '../../../src/server/cards/base/RoboticWorkforce';
+import {SelectCard} from '../../../src/server/inputs/SelectCard';
 import {Units} from '../../../src/common/Units';
-import {Resources} from '../../../src/common/Resources';
+import {Resource} from '../../../src/common/Resource';
+import {testGame} from '../../TestGame';
 
 describe('MiningRights', () => {
-  let card : MiningRights; let player : TestPlayer; let game : Game;
+  let card: MiningRights;
+  let player: TestPlayer;
+  let game: Game;
 
   beforeEach(() => {
     card = new MiningRights();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('gameid', [player, redPlayer], player);
+    [game, player] = testGame(2);
   });
 
   it('Cannot play if no available spaces', () => {
     for (const land of game.board.getAvailableSpacesOnLand(player)) {
       if (land.bonus.includes(SpaceBonus.STEEL) || land.bonus.includes(SpaceBonus.TITANIUM)) {
-        game.addTile(player, land.spaceType, land, {tileType: TileType.MINING_RIGHTS});
+        game.addTile(player, land, {tileType: TileType.MINING_RIGHTS});
       }
     }
     expect(card.canPlay(player)).is.not.true;
@@ -45,7 +45,7 @@ describe('MiningRights', () => {
 
     expect(titaniumSpace!.player).to.eq(player);
     expect(titaniumSpace!.tile && titaniumSpace!.tile!.tileType).to.eq(TileType.MINING_RIGHTS);
-    expect(player.getProductionForTest()).deep.eq(Units.of({titanium: 1}));
+    expect(player.production.asUnits()).deep.eq(Units.of({titanium: 1}));
     expect(titaniumSpace!.adjacency?.bonus).eq(undefined);
   });
 
@@ -61,7 +61,7 @@ describe('MiningRights', () => {
 
     expect(steelSpace!.player).to.eq(player);
     expect(steelSpace!.tile && steelSpace!.tile!.tileType).to.eq(TileType.MINING_RIGHTS);
-    expect(player.getProductionForTest()).deep.eq(Units.of({steel: 1}));
+    expect(player.production.asUnits()).deep.eq(Units.of({steel: 1}));
     expect(steelSpace!.adjacency?.bonus).eq(undefined);
   });
 
@@ -79,8 +79,8 @@ describe('MiningRights', () => {
     const orOptions = cast(deferredAction?.execute(), OrOptions);
 
     orOptions.options[0].cb();
-    expect(player.getProductionForTest()).deep.eq(Units.of({steel: 1}));
-    expect(card.bonusResource).deep.eq([Resources.STEEL]);
+    expect(player.production.asUnits()).deep.eq(Units.of({steel: 1}));
+    expect(card.bonusResource).deep.eq([Resource.STEEL]);
   });
 
   it('Should play when space bonus is both steel and titanium, plus Robotic Workforce works correctly', () => {
@@ -93,7 +93,7 @@ describe('MiningRights', () => {
     const deferredAction = game.deferredActions.pop();
     const orOptions = cast(deferredAction?.execute(), OrOptions);
     orOptions.options[0].cb();
-    expect(player.getProductionForTest()).deep.eq(Units.of({steel: 1}));
+    expect(player.production.asUnits()).deep.eq(Units.of({steel: 1}));
 
     player.playedCards = [card];
 
@@ -102,6 +102,6 @@ describe('MiningRights', () => {
     expect(selectCard.cards).deep.eq([card]);
     selectCard.cb([selectCard.cards[0]]);
     runAllActions(game);
-    expect(player.getProductionForTest()).deep.eq(Units.of({steel: 2}));
+    expect(player.production.asUnits()).deep.eq(Units.of({steel: 2}));
   });
 });

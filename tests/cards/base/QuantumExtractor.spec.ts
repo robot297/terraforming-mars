@@ -1,23 +1,21 @@
 import {expect} from 'chai';
-import {Bushes} from '../../../src/cards/base/Bushes';
-import {QuantumExtractor} from '../../../src/cards/base/QuantumExtractor';
-import {TollStation} from '../../../src/cards/base/TollStation';
-import {Game} from '../../../src/Game';
-import {Player} from '../../../src/Player';
-import {TestPlayers} from '../../TestPlayers';
+import {testGame} from '../../TestGame';
+import {Bushes} from '../../../src/server/cards/base/Bushes';
+import {QuantumExtractor} from '../../../src/server/cards/base/QuantumExtractor';
+import {TollStation} from '../../../src/server/cards/base/TollStation';
+import {TestPlayer} from '../../TestPlayer';
 
 describe('QuantumExtractor', function() {
-  let card : QuantumExtractor; let player : Player;
+  let card: QuantumExtractor;
+  let player: TestPlayer;
 
   beforeEach(function() {
     card = new QuantumExtractor();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    Game.newInstance('gameid', [player, redPlayer], player);
+    [/* skipped */, player] = testGame(2);
   });
 
-  it('Can\'t play', function() {
-    expect(player.canPlayIgnoringCost(card)).is.not.true;
+  it('Can not play', function() {
+    expect(player.simpleCanPlay(card)).is.not.true;
   });
 
   it('Should play', function() {

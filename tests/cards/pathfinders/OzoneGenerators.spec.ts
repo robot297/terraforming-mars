@@ -1,8 +1,8 @@
 import {expect} from 'chai';
-import {OzoneGenerators} from '../../../src/cards/pathfinders/OzoneGenerators';
-import {Game} from '../../../src/Game';
+import {setOxygenLevel} from '../../TestingUtils';
+import {OzoneGenerators} from '../../../src/server/cards/pathfinders/OzoneGenerators';
+import {Game} from '../../../src/server/Game';
 import {TestPlayer} from '../../TestPlayer';
-import {TestPlayers} from '../../TestPlayers';
 
 describe('OzoneGenerators', function() {
   let card: OzoneGenerators;
@@ -11,15 +11,15 @@ describe('OzoneGenerators', function() {
 
   beforeEach(function() {
     card = new OzoneGenerators();
-    player = TestPlayers.BLUE.newPlayer();
+    player = TestPlayer.BLUE.newPlayer();
     game = Game.newInstance('gameid', [player], player);
   });
 
   it('canPlay', function() {
-    (game as any).oxygenLevel = 5;
+    setOxygenLevel(game, 5);
     player.megaCredits = card.cost;
     expect(player.canPlay(card)).is.false;
-    (game as any).oxygenLevel = 6;
+    setOxygenLevel(game, 6);
     expect(player.canPlay(card)).is.true;
   });
 

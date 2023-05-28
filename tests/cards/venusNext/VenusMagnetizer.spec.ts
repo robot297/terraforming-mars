@@ -1,37 +1,38 @@
 import {expect} from 'chai';
-import {VenusMagnetizer} from '../../../src/cards/venusNext/VenusMagnetizer';
-import {Game} from '../../../src/Game';
-import {Player} from '../../../src/Player';
-import {Resources} from '../../../src/common/Resources';
-import {TestPlayers} from '../../TestPlayers';
+import {VenusMagnetizer} from '../../../src/server/cards/venusNext/VenusMagnetizer';
+import {Game} from '../../../src/server/Game';
+import {Resource} from '../../../src/common/Resource';
+import {TestPlayer} from '../../TestPlayer';
+import {setVenusScaleLevel} from '../../TestingUtils';
+import {testGame} from '../../TestGame';
 
 describe('VenusMagnetizer', function() {
-  let card : VenusMagnetizer; let player : Player; let game : Game;
+  let card: VenusMagnetizer;
+  let player: TestPlayer;
+  let game: Game;
 
   beforeEach(function() {
     card = new VenusMagnetizer();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('gameid', [player, redPlayer], player);
+    [game, player] = testGame(2);
   });
 
-  it('Can\'t play', function() {
-    (game as any).venusScaleLevel = 8;
-    expect(player.canPlayIgnoringCost(card)).is.not.true;
+  it('Can not play', function() {
+    setVenusScaleLevel(game, 8);
+    expect(player.simpleCanPlay(card)).is.not.true;
   });
 
   it('Should play', function() {
-    (game as any).venusScaleLevel = 10;
-    expect(player.canPlayIgnoringCost(card)).is.true;
-    expect(card.play()).is.undefined;
+    setVenusScaleLevel(game, 10);
+    expect(player.simpleCanPlay(card)).is.true;
+    expect(card.play(player)).is.undefined;
   });
 
   it('Should act', function() {
-    player.addProduction(Resources.ENERGY, 2);
+    player.production.add(Resource.ENERGY, 2);
     player.playedCards.push(card);
 
     card.action(player);
-    expect(player.getProduction(Resources.ENERGY)).to.eq(1);
+    expect(player.production.energy).to.eq(1);
     expect(game.getVenusScaleLevel()).to.eq(2);
   });
 });

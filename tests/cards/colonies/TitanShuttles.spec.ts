@@ -1,28 +1,28 @@
 import {expect} from 'chai';
 import {cast} from '../../TestingUtils';
-import {TitanFloatingLaunchPad} from '../../../src/cards/colonies/TitanFloatingLaunchPad';
-import {TitanShuttles} from '../../../src/cards/colonies/TitanShuttles';
-import {ICard} from '../../../src/cards/ICard';
-import {Game} from '../../../src/Game';
-import {OrOptions} from '../../../src/inputs/OrOptions';
-import {SelectCard} from '../../../src/inputs/SelectCard';
-import {Player} from '../../../src/Player';
-import {TestPlayers} from '../../TestPlayers';
+import {TitanFloatingLaunchPad} from '../../../src/server/cards/colonies/TitanFloatingLaunchPad';
+import {TitanShuttles} from '../../../src/server/cards/colonies/TitanShuttles';
+import {ICard} from '../../../src/server/cards/ICard';
+import {Game} from '../../../src/server/Game';
+import {OrOptions} from '../../../src/server/inputs/OrOptions';
+import {SelectCard} from '../../../src/server/inputs/SelectCard';
+import {TestPlayer} from '../../TestPlayer';
+import {testGame} from '../../TestGame';
 
 describe('TitanShuttles', function() {
-  let card : TitanShuttles; let player : Player; let game : Game;
+  let card: TitanShuttles;
+  let player: TestPlayer;
+  let game: Game;
 
   beforeEach(function() {
     card = new TitanShuttles();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('gameid', [player, redPlayer], player);
+    [game, player] = testGame(2);
 
     player.playedCards.push(card);
   });
 
   it('Should play', function() {
-    const action = card.play();
+    const action = card.play(player);
     expect(action).is.undefined;
   });
 
@@ -31,7 +31,7 @@ describe('TitanShuttles', function() {
   });
 
   it('Gives VP', function() {
-    expect(card.getVictoryPoints()).to.eq(1);
+    expect(card.getVictoryPoints(player)).to.eq(1);
   });
 
   it('Auto add floaters if only 1 option and 1 target available', function() {
@@ -49,7 +49,7 @@ describe('TitanShuttles', function() {
     card.action(player);
     expect(game.deferredActions).has.lengthOf(1);
 
-    const selectCard = game.deferredActions.peek()!.execute() as SelectCard<ICard>;
+    const selectCard = cast(game.deferredActions.peek()!.execute(), SelectCard<ICard>);
     selectCard.cb([card]);
     expect(card.resourceCount).to.eq(2);
   });
@@ -71,7 +71,7 @@ describe('TitanShuttles', function() {
     orOptions.options[0].cb();
     expect(game.deferredActions).has.lengthOf(1);
 
-    const selectCard = game.deferredActions.peek()!.execute() as SelectCard<ICard>;
+    const selectCard = cast(game.deferredActions.peek()!.execute(), SelectCard<ICard>);
     selectCard.cb([card2]);
     expect(card2.resourceCount).to.eq(2);
   });

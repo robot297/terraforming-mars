@@ -7,18 +7,22 @@
       <span v-if="player === 'NEUTRAL'" >Neutral</span>
       <select-player-row v-else :player="players.find((otherPlayer) => otherPlayer.color === player)"></select-player-row>
     </label>
-    <Button v-if="showsave === true" size="big" @click="saveData" :title="$t(playerinput.buttonLabel)" />
+    <AppButton v-if="showsave === true" size="big" @click="saveData" :title="$t(playerinput.buttonLabel)" />
   </div>
 </template>
 
 <script lang="ts">
 import Vue from 'vue';
-import Button from '@/client/components/common/Button.vue';
+import AppButton from '@/client/components/common/AppButton.vue';
 import {ColorWithNeutral} from '@/common/Color';
 import {PlayerInputModel} from '@/common/models/PlayerInputModel';
 import {PublicPlayerModel} from '@/common/models/PlayerModel';
 import SelectPlayerRow from '@/client/components/SelectPlayerRow.vue';
-import {InputResponse} from '@/common/inputs/InputResponse';
+import {SelectDelegateResponse} from '@/common/inputs/InputResponse';
+
+interface DataModel {
+  selectedPlayer: ColorWithNeutral | undefined;
+}
 
 export default Vue.extend({
   name: 'SelectPartyPlayer',
@@ -30,7 +34,7 @@ export default Vue.extend({
       type: Object as () => PlayerInputModel,
     },
     onsave: {
-      type: Function as unknown as () => (out: InputResponse) => void,
+      type: Function as unknown as () => (out: SelectDelegateResponse) => void,
     },
     showsave: {
       type: Boolean,
@@ -39,23 +43,20 @@ export default Vue.extend({
       type: Boolean,
     },
   },
-  data() {
+  data(): DataModel {
     return {
-      selectedPlayer: undefined as ColorWithNeutral | undefined,
+      selectedPlayer: undefined,
     };
   },
   components: {
-    Button,
+    AppButton,
     'select-player-row': SelectPlayerRow,
   },
   methods: {
     saveData() {
-      const result: string[][] = [];
-      result.push([]);
       if (this.selectedPlayer !== undefined) {
-        result[0].push(this.selectedPlayer);
+        this.onsave({type: 'delegate', player: this.selectedPlayer});
       }
-      this.onsave(result);
     },
   },
 });

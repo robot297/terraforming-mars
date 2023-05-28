@@ -1,13 +1,10 @@
-import {Game} from '../../../src/Game';
-import {cast, setCustomGameOptions} from '../../TestingUtils';
-import {TestPlayers} from '../../TestPlayers';
-import {TestPlayer} from '../../TestPlayer';
-import {DarksideIncubationPlant} from '../../../src/cards/moon/DarksideIncubationPlant';
 import {expect} from 'chai';
-import {OrOptions} from '../../../src/inputs/OrOptions';
-import {MoonExpansion} from '../../../src/moon/MoonExpansion';
-
-const MOON_OPTIONS = setCustomGameOptions({moonExpansion: true});
+import {Game} from '../../../src/server/Game';
+import {cast} from '../../TestingUtils';
+import {TestPlayer} from '../../TestPlayer';
+import {DarksideIncubationPlant} from '../../../src/server/cards/moon/DarksideIncubationPlant';
+import {OrOptions} from '../../../src/server/inputs/OrOptions';
+import {MoonExpansion} from '../../../src/server/moon/MoonExpansion';
 
 describe('DarksideIncubationPlant', () => {
   let player: TestPlayer;
@@ -15,8 +12,8 @@ describe('DarksideIncubationPlant', () => {
   let game: Game;
 
   beforeEach(() => {
-    player = TestPlayers.BLUE.newPlayer();
-    game = Game.newInstance('gameid', [player], player, MOON_OPTIONS);
+    player = TestPlayer.BLUE.newPlayer();
+    game = Game.newInstance('gameid', [player], player, {moonExpansion: true});
     card = new DarksideIncubationPlant();
   });
 
@@ -57,15 +54,15 @@ describe('DarksideIncubationPlant', () => {
 
   it('victoryPoints', () => {
     card.resourceCount = 0;
-    expect(card.getVictoryPoints()).eq(0);
+    expect(card.getVictoryPoints(player)).eq(0);
     card.resourceCount = 1;
-    expect(card.getVictoryPoints()).eq(0);
+    expect(card.getVictoryPoints(player)).eq(0);
     card.resourceCount = 2;
-    expect(card.getVictoryPoints()).eq(1);
+    expect(card.getVictoryPoints(player)).eq(1);
     card.resourceCount = 3;
-    expect(card.getVictoryPoints()).eq(1);
+    expect(card.getVictoryPoints(player)).eq(1);
     card.resourceCount = 4;
-    expect(card.getVictoryPoints()).eq(2);
+    expect(card.getVictoryPoints(player)).eq(2);
   });
 });
 

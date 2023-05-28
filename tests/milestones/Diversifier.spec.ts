@@ -1,22 +1,18 @@
-
 import {expect} from 'chai';
-import {Diversifier} from '../../src/milestones/Diversifier';
-import {ResearchNetwork} from '../../src/cards/prelude/ResearchNetwork';
-import {TestPlayers} from '../TestPlayers';
-import {Game} from '../../src/Game';
-import {Player} from '../../src/Player';
-import {Leavitt} from '../../src/cards/community/Leavitt';
-import {setCustomGameOptions} from '../TestingUtils';
-import {AntiGravityTechnology} from '../../src/cards/base/AntiGravityTechnology';
+import {Diversifier} from '../../src/server/milestones/Diversifier';
+import {ResearchNetwork} from '../../src/server/cards/prelude/ResearchNetwork';
+import {TestPlayer} from '../TestPlayer';
+import {Leavitt} from '../../src/server/cards/community/Leavitt';
+import {AntiGravityTechnology} from '../../src/server/cards/base/AntiGravityTechnology';
+import {testGame} from '../TestGame';
 
 describe('Diversifier', function() {
-  let milestone : Diversifier;
-  let player : Player;
+  let milestone: Diversifier;
+  let player: TestPlayer;
 
   beforeEach(() => {
     milestone = new Diversifier();
-    player = TestPlayers.BLUE.newPlayer();
-    Game.newInstance('gameid', [player], player);
+    [, player] = testGame(2);
   });
 
   it('Counts wild tags tags as unique tags', function() {
@@ -29,8 +25,30 @@ describe('Diversifier', function() {
   });
 
   it('Counts Leavitt science tag placement bonus', function() {
-    const gameOptions = setCustomGameOptions({coloniesExtension: true});
-    const game = Game.newInstance('gameid', [player], player, gameOptions);
+    const [game, player] = testGame(1, {coloniesExtension: true});
+    const leavitt = new Leavitt();
+    game.colonies = [leavitt];
+
+    leavitt.addColony(player);
+    expect(milestone.getScore(player)).eq(1);
+
+    // Adding a second colony doesn't change things
+    leavitt.addColony(player);
+    expect(milestone.getScore(player)).eq(1);
+
+    // Or another science card.
+    player.playedCards.push(new AntiGravityTechnology());
+    expect(milestone.getScore(player)).eq(1);
+
+    expect(milestone.canClaim(player)).is.false;
+    for (let i = 0; i < 7; i++) {
+      player.playedCards.push(new ResearchNetwork());
+    }
+    expect(milestone.canClaim(player)).is.true;
+  });
+
+  it('Counts Leavitt science tag placement bonus', function() {
+    const [game, player] = testGame(1, {coloniesExtension: true});
     const leavitt = new Leavitt();
     game.colonies = [leavitt];
 

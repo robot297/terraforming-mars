@@ -3,11 +3,12 @@ import {RandomMAOptionType} from '../ma/RandomMAOptionType';
 import {AgendaStyle} from '../turmoil/Types';
 import {CardName} from '../cards/CardName';
 
-export interface GameOptionsModel {
+export type GameOptionsModel = {
   aresExtension: boolean,
   altVenusBoard: boolean,
   boardName: BoardName,
-  cardsBlackList: Array<CardName>;
+  bannedCards: Array<CardName>;
+  ceoExtension: boolean,
   coloniesExtension: boolean,
   communityCardsOption: boolean,
   corporateEra: boolean,
@@ -17,6 +18,7 @@ export interface GameOptionsModel {
   escapeVelocityPeriod?: number,
   escapeVelocityPenalty?: number,
   fastModeOption: boolean,
+  includeFanMA: boolean,
   includeVenusMA: boolean,
   initialDraftVariant: boolean,
   moonExpansion: boolean,
@@ -34,6 +36,7 @@ export interface GameOptionsModel {
   requiresMoonTrackCompletion: boolean,
   requiresVenusTrackCompletion: boolean,
   turmoilExtension: boolean,
+  twoCorpsVariant: boolean,
   venusNextExtension: boolean,
   undoOption: boolean,
 }

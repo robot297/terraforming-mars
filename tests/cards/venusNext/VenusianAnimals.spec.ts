@@ -1,30 +1,31 @@
 import {expect} from 'chai';
-import {Research} from '../../../src/cards/base/Research';
-import {VenusianAnimals} from '../../../src/cards/venusNext/VenusianAnimals';
-import {Game} from '../../../src/Game';
-import {Player} from '../../../src/Player';
-import {TestPlayers} from '../../TestPlayers';
+import {setVenusScaleLevel} from '../../TestingUtils';
+import {Research} from '../../../src/server/cards/base/Research';
+import {VenusianAnimals} from '../../../src/server/cards/venusNext/VenusianAnimals';
+import {Game} from '../../../src/server/Game';
+import {TestPlayer} from '../../TestPlayer';
+import {testGame} from '../../TestGame';
 
 describe('VenusianAnimals', function() {
-  let card : VenusianAnimals; let player : Player; let game : Game;
+  let card: VenusianAnimals;
+  let player: TestPlayer;
+  let game: Game;
 
   beforeEach(function() {
     card = new VenusianAnimals();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    game = Game.newInstance('gameid', [player, redPlayer], player);
+    [game, player] = testGame(2);
   });
 
-  it('Can\'t play', function() {
-    (game as any).venusScaleLevel = 16;
-    expect(player.canPlayIgnoringCost(card)).is.not.true;
+  it('Can not play', function() {
+    setVenusScaleLevel(game, 16);
+    expect(player.simpleCanPlay(card)).is.not.true;
   });
 
   it('Should play', function() {
-    (game as any).venusScaleLevel = 18;
-    expect(player.canPlayIgnoringCost(card)).is.true;
+    setVenusScaleLevel(game, 18);
+    expect(player.simpleCanPlay(card)).is.true;
     player.playedCards.push(card);
-    card.play();
+    card.play(player);
 
     card.onCardPlayed(player, card);
     expect(card.resourceCount).to.eq(1);
@@ -32,6 +33,6 @@ describe('VenusianAnimals', function() {
     card.onCardPlayed(player, new Research());
     expect(card.resourceCount).to.eq(3);
 
-    expect(card.getVictoryPoints()).to.eq(3);
+    expect(card.getVictoryPoints(player)).to.eq(3);
   });
 });

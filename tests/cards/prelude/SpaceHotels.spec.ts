@@ -1,27 +1,27 @@
 import {expect} from 'chai';
-import {SpaceHotels} from '../../../src/cards/prelude/SpaceHotels';
-import {Player} from '../../../src/Player';
-import {Resources} from '../../../src/common/Resources';
-import {TestPlayers} from '../../TestPlayers';
+import {TestPlayer} from '../../TestPlayer';
+import {SpaceHotels} from '../../../src/server/cards/prelude/SpaceHotels';
+import {testGame} from '../../TestGame';
 
 describe('SpaceHotels', function() {
-  let card : SpaceHotels; let player : Player;
+  let card: SpaceHotels;
+  let player: TestPlayer;
 
   beforeEach(function() {
     card = new SpaceHotels();
-    player = TestPlayers.BLUE.newPlayer();
+    [/* skipped */, player] = testGame(1);
   });
 
-  it('Can\'t play', function() {
+  it('Can not play', function() {
     player.playedCards.push(card);
-    expect(player.canPlayIgnoringCost(card)).is.not.true;
+    expect(player.simpleCanPlay(card)).is.not.true;
   });
 
   it('Should play', function() {
     player.playedCards.push(card, card);
-    expect(player.canPlayIgnoringCost(card)).is.true;
+    expect(player.simpleCanPlay(card)).is.true;
 
     card.play(player);
-    expect(player.getProduction(Resources.MEGACREDITS)).to.eq(4);
+    expect(player.production.megacredits).to.eq(4);
   });
 });

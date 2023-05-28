@@ -1,31 +1,29 @@
 import {expect} from 'chai';
-import {MagneticFieldGenerators} from '../../../src/cards/base/MagneticFieldGenerators';
-import {Game} from '../../../src/Game';
-import {Player} from '../../../src/Player';
-import {Resources} from '../../../src/common/Resources';
-import {TestPlayers} from '../../TestPlayers';
+import {MagneticFieldGenerators} from '../../../src/server/cards/base/MagneticFieldGenerators';
+import {Resource} from '../../../src/common/Resource';
+import {TestPlayer} from '../../TestPlayer';
+import {testGame} from '../../TestGame';
 
 describe('MagneticFieldGenerators', function() {
-  let card : MagneticFieldGenerators; let player : Player;
+  let card: MagneticFieldGenerators;
+  let player: TestPlayer;
 
   beforeEach(function() {
     card = new MagneticFieldGenerators();
-    player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    Game.newInstance('gameid', [player, redPlayer], player);
+    [/* skipped */, player] = testGame(2);
   });
 
-  it('Can\'t play', function() {
-    expect(card.canPlay(player)).is.not.true;
+  it('Can not play', function() {
+    expect(player.simpleCanPlay(card)).is.not.true;
   });
 
   it('Should play', function() {
-    player.addProduction(Resources.ENERGY, 4);
-    expect(card.canPlay(player)).is.true;
+    player.production.add(Resource.ENERGY, 4);
+    expect(player.simpleCanPlay(card)).is.true;
 
     card.play(player);
-    expect(player.getProduction(Resources.ENERGY)).to.eq(0);
-    expect(player.getProduction(Resources.PLANTS)).to.eq(2);
+    expect(player.production.energy).to.eq(0);
+    expect(player.production.plants).to.eq(2);
     expect(player.getTerraformRating()).to.eq(23);
   });
 });

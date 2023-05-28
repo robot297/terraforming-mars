@@ -19,7 +19,7 @@
     </div>
     <div v-if="showsave && selectedOption">
       <div style="margin: 5px 30px 10px" class="wf-action">
-        <Button :title="$t(selectedOption.buttonLabel)" type="submit" size="normal" @click="saveData" />
+        <AppButton :title="$t(selectedOption.buttonLabel)" type="submit" size="normal" @click="saveData" />
       </div>
     </div>
   </div>
@@ -28,12 +28,12 @@
 <script lang="ts">
 
 import Vue from 'vue';
-import Button from '@/client/components/common/Button.vue';
+import AppButton from '@/client/components/common/AppButton.vue';
 import {PlayerViewModel, PublicPlayerModel} from '@/common/models/PlayerModel';
 import {PlayerInputModel} from '@/common/models/PlayerInputModel';
 import {getPreferences} from '@/client/utils/PreferencesManager';
-import {InputResponse} from '@/common/inputs/InputResponse';
-import {PlayerInputTypes} from '@/common/input/PlayerInputTypes';
+import {InputResponse, OrOptionsResponse} from '@/common/inputs/InputResponse';
+import {PlayerInputType} from '@/common/input/PlayerInputType';
 
 let unique = 0;
 
@@ -50,7 +50,7 @@ export default Vue.extend({
       type: Object as () => PlayerInputModel,
     },
     onsave: {
-      type: Function as unknown as () => (out: InputResponse) => void,
+      type: Function as unknown as () => (out: OrOptionsResponse) => void,
     },
     showsave: {
       type: Boolean,
@@ -60,7 +60,7 @@ export default Vue.extend({
     },
   },
   components: {
-    Button,
+    AppButton,
   },
   data() {
     if (this.playerinput.options === undefined) {
@@ -70,7 +70,7 @@ export default Vue.extend({
     // Special case: If the first displayed option is SelectCard, and none of them are enabled, skip it.
     let selectedOption = displayedOptions[0];
     if (displayedOptions.length > 1 &&
-      selectedOption.inputType === PlayerInputTypes.SELECT_CARD &&
+      selectedOption.inputType === PlayerInputType.SELECT_CARD &&
       !selectedOption.cards?.some((card) => card.isDisabled === false)) {
       selectedOption = displayedOptions[1];
     }
@@ -84,14 +84,14 @@ export default Vue.extend({
     playerFactorySaved() {
       const idx = this.playerinput.options?.indexOf(this.selectedOption);
       if (idx === undefined || idx === -1) {
-        throw new Error('option not found!');
+        throw new Error('option not found');
       }
       return (out: InputResponse) => {
-        const copy = [[String(idx)]];
-        for (let i = 0; i < out.length; i++) {
-          copy.push(out[i].slice());
-        }
-        this.onsave(copy);
+        this.onsave({
+          type: 'or',
+          index: idx,
+          response: out,
+        });
       };
     },
     saveData() {

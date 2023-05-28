@@ -2,8 +2,7 @@
 import Vue from 'vue';
 import {WithRefs} from 'vue-typed-refs';
 
-import {PreferencesManager, Preference} from '@/client/utils/PreferencesManager';
-import {LANGUAGES} from '@/common/constants';
+import {getPreferences, PreferencesManager, Preference} from '@/client/utils/PreferencesManager';
 import BugReportDialog from '@/client/components/BugReportDialog.vue';
 
 type Refs = {
@@ -62,21 +61,16 @@ export default (Vue as WithRefs<Refs>).extend({
     },
   },
   computed: {
-    LANGUAGES(): typeof LANGUAGES {
-      return LANGUAGES;
+    getPreferences(): typeof getPreferences {
+      return getPreferences;
     },
+
   },
 });
 </script>
 
 <template>
     <div class="preferences_panel" :data="syncPreferences()">
-      <div class="preferences_panel_item">
-        <label class="form-switch">
-          <input type="checkbox" v-on:change="updatePreferences" v-model="prefs.hide_hand" data-test="hide_hand">
-          <i class="form-icon"></i> <span v-i18n>Hide cards in hand</span>
-        </label>
-      </div>
       <div class="preferences_panel_item">
         <label class="form-switch">
           <input type="checkbox" v-on:change="updatePreferences" v-model="prefs.hide_awards_and_milestones" data-test="hide_awards_and_milestones">
@@ -147,21 +141,19 @@ export default (Vue as WithRefs<Refs>).extend({
           <span class="tooltip tooltip-left" :data-tooltip="$t('Test out any possible new experimental UI features for feedback.')">&#9432;</span>
         </label>
       </div>
-      <div class="preferences_panel_item form-group">
-        <label class="form-label"><span v-i18n>Language</span> (<a href="javascript:document.location.reload(true);" v-i18n>refresh page</a> <span v-i18n>to see changes</span>)</label>
-        <div class="preferences_panel_langs">
-          <label class="form-radio" v-for="language in LANGUAGES" :key="language.id">
-            <input name="lang" type="radio" v-on:change="updatePreferences" v-model="prefs.lang" :value="language.id">
-            <i class="form-icon"></i> <span v-i18n>{{ language.title }}</span>
-          </label>
-        </div>
+      <div class="preferences_panel_item">
+        <label class="form-switch">
+          <input type="checkbox" v-on:change="updatePreferences" v-model="prefs.debug_view" data-test="debug_view">
+          <i class="form-icon"></i>
+          <span v-i18n>Debug View</span>
+          <span class="tooltip tooltip-left" :data-tooltip="$t('Add information useful for development and debugging.')">&#9432;</span>
+        </label>
       </div>
-
 
       <div class="preferences_panel_actions">
         <button class="btn btn-lg btn-primary" v-on:click="okClicked" v-i18n>Ok</button>
         <button class="btn btn-lg btn-primary" v-on:click="$refs.bugDialog.show();" v-i18n>Report a bug</button>
       </div>
-      <bug-report-dialog ref="bugDialog" :model="undefined" :source="'spectator'"></bug-report-dialog>
+      <bug-report-dialog ref="bugDialog"></bug-report-dialog>
     </div>
 </template>

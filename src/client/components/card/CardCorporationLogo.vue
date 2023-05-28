@@ -115,6 +115,9 @@
     <template v-else-if="title === CardName.PROJECT_WORKSHOP">
       <div class="card-project-workshop-logo">PROJECT<br/>WORKSHOP</div>
     </template>
+    <template v-else-if="title === CardName.UNITED_NATIONS_MISSION_ONE">
+      <span class="card-unmo-logo">UNITED NATIONS<br/>MISSION ONE</span>
+    </template>
     <template v-else-if="title === CardName.MONS_INSURANCE">
       <div class="card-mons-logo">
       <div class="mons0">▲</div>
@@ -124,6 +127,12 @@
     </template>
     <template v-else-if="title ===  CardName.CURIOSITY_II">
       <div class="card-curiosity-ii-logo">Curiosity II</div>
+    </template>
+    <template v-else-if="title === CardName.MARS_MATHS">
+      <div class="card-mars-maths-logo" style="font-family: Century Gothic, CenturyGothic, AppleGothic, sans-serif">
+        <span style="color: rgb(0, 0, 0);">MARS</span>
+        <span style="color: rgb(208, 96, 3);box-shadow: -6px -6px #d58c56;">MATHS</span>
+      </div>
     </template>
     <template v-else>
       <div :class="logoClass">{{capsTitle}}</div>
@@ -145,6 +154,7 @@ const imageOnlyLogos: Map<CardName, string> = new Map([
   [CardName.LUNA_FIRST_INCORPORATED, 'card-luna-first-incorporated-logo'],
   [CardName.THE_GRAND_LUNA_CAPITAL_GROUP, 'card-the-grand-luna-capital-group-logo'],
   [CardName.INTRAGEN_SANCTUARY_HEADQUARTERS, 'card-intragen-sanctuary-headquarters-logo'],
+  [CardName.LUNA_TRADE_FEDERATION, 'card-luna-trade-federation-logo'],
   [CardName.THE_ARCHAIC_FOUNDATION_INSTITUTE, 'card-the-archaic-foundation-institute-logo'],
   [CardName.POLARIS, 'card-polaris-logo'],
   [CardName.RINGCOM, 'card-ringcom-logo'],
@@ -161,6 +171,7 @@ const imageOnlyLogos: Map<CardName, string> = new Map([
   [CardName.ADHAI_HIGH_ORBIT_CONSTRUCTIONS, 'card-adhai-high-orbit-constructions-logo'],
   [CardName.HABITAT_MARTE, 'card-habitat-marte-logo'],
   [CardName.ODYSSEY, 'card-odyssey-logo'],
+  [CardName.AURORAI, 'card-aurorai-logo'],
 ]);
 
 const imageLogosWithNames: Map<CardName, string> = new Map([
@@ -181,6 +192,7 @@ const imageLogosWithNames: Map<CardName, string> = new Map([
   [CardName.ARIDOR, 'card-aridor-logo'],
   [CardName.TERACTOR, 'card-teractor-logo'],
   [CardName.MIDAS, 'card-midas-logo'],
+  [CardName.MARS_MATHS, 'card-mars-maths-logo'],
 ]);
 
 export default Vue.extend({

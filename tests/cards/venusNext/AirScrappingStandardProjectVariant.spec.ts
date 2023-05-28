@@ -1,10 +1,10 @@
 import {expect} from 'chai';
 import {CardName} from '../../../src/common/cards/CardName';
-import {AirScrappingStandardProjectVariant} from '../../../src/cards/venusNext/AirScrappingStandardProjectVariant';
-import {runAllActions, setCustomGameOptions} from '../../TestingUtils';
+import {AirScrappingStandardProjectVariant} from '../../../src/server/cards/venusNext/AirScrappingStandardProjectVariant';
+import {runAllActions} from '../../TestingUtils';
+import {Game} from '../../../src/server/Game';
 import {TestPlayer} from '../../TestPlayer';
-import {Game} from '../../../src/Game';
-import {TestPlayers} from '../../TestPlayers';
+import {testGame} from '../../TestGame';
 
 describe('AirScrappingStandardProjectVariant', function() {
   let card: AirScrappingStandardProjectVariant;
@@ -13,14 +13,13 @@ describe('AirScrappingStandardProjectVariant', function() {
 
   beforeEach(function() {
     card = new AirScrappingStandardProjectVariant();
-    player = TestPlayers.BLUE.newPlayer();
-    game = Game.newInstance('gameid', [player], player, setCustomGameOptions({altVenusBoard: true}));
+    [game, player] = testGame(1, {venusNextExtension: true, altVenusBoard: true});
   });
 
   it('option not available for regular board', function() {
     // Building another game without the alt venus board.
-    const player = TestPlayers.BLUE.newPlayer();
-    Game.newInstance('gameid', [player], player, setCustomGameOptions({altVenusBoard: false}));
+    const [, player] = testGame(1);
+    Game.newInstance('gameid', [player], player, {venusNextExtension: true, altVenusBoard: false});
     const cards = player.getStandardProjectOption().cards;
     const names = cards.map((card) => card.name);
     expect(names).to.include(CardName.AIR_SCRAPPING_STANDARD_PROJECT);

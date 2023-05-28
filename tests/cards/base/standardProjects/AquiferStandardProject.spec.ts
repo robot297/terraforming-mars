@@ -1,15 +1,16 @@
 import {expect} from 'chai';
-import {AquiferStandardProject} from '../../../../src/cards/base/standardProjects/AquiferStandardProject';
-import {maxOutOceans, setCustomGameOptions, runAllActions} from '../../../TestingUtils';
+import {cast, churnAction} from '../../../TestingUtils';
+import {AquiferStandardProject} from '../../../../src/server/cards/base/standardProjects/AquiferStandardProject';
+import {maxOutOceans} from '../../../TestingUtils';
 import {TestPlayer} from '../../../TestPlayer';
-import {Game} from '../../../../src/Game';
-import {TestPlayers} from '../../../TestPlayers';
-import {PoliticalAgendas} from '../../../../src/turmoil/PoliticalAgendas';
-import {Reds} from '../../../../src/turmoil/parties/Reds';
+import {Game} from '../../../../src/server/Game';
+import {PoliticalAgendas} from '../../../../src/server/turmoil/PoliticalAgendas';
+import {Reds} from '../../../../src/server/turmoil/parties/Reds';
 import {Phase} from '../../../../src/common/Phase';
-import {SelectSpace} from '../../../../src/inputs/SelectSpace';
+import {SelectSpace} from '../../../../src/server/inputs/SelectSpace';
 import {SpaceType} from '../../../../src/common/boards/SpaceType';
 import {TileType} from '../../../../src/common/TileType';
+import {testGame} from '../../../TestGame';
 
 describe('AquiferStandardProject', function() {
   let card: AquiferStandardProject;
@@ -18,7 +19,7 @@ describe('AquiferStandardProject', function() {
 
   beforeEach(function() {
     card = new AquiferStandardProject();
-    player = TestPlayers.BLUE.newPlayer();
+    player = TestPlayer.BLUE.newPlayer();
     game = Game.newInstance('gameid', [player], player);
   });
 
@@ -34,10 +35,7 @@ describe('AquiferStandardProject', function() {
     player.setTerraformRating(20);
     expect(game.board.getOceanCount()).eq(0);
 
-    card.action(player);
-    runAllActions(game);
-
-    const selectSpace = player.getWaitingFor() as SelectSpace;
+    const selectSpace = cast(churnAction(card, player), SelectSpace);
     const availableSpace = selectSpace.availableSpaces[0];
 
     expect(availableSpace.spaceType).eq(SpaceType.OCEAN);
@@ -57,8 +55,7 @@ describe('AquiferStandardProject', function() {
   });
 
   it('Can not act with reds', () => {
-    player = TestPlayers.BLUE.newPlayer();
-    game = Game.newInstance('gameid', [player], player, setCustomGameOptions({turmoilExtension: true}));
+    [game, player] = testGame(1, {turmoilExtension: true});
 
     player.megaCredits = card.cost;
     player.game.phase = Phase.ACTION;

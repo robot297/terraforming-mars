@@ -1,22 +1,20 @@
 import {expect} from 'chai';
-import {ConvertHeat} from '../../../../src/cards/base/standardActions/ConvertHeat';
+import {ConvertHeat} from '../../../../src/server/cards/base/standardActions/ConvertHeat';
 import {Phase} from '../../../../src/common/Phase';
-import {Player} from '../../../../src/Player';
-import {setCustomGameOptions} from '../../../TestingUtils';
-import {TestPlayers} from '../../../TestPlayers';
-import {Game} from '../../../../src/Game';
-import {PoliticalAgendas} from '../../../../src/turmoil/PoliticalAgendas';
-import {Reds} from '../../../../src/turmoil/parties/Reds';
+import {churnAction, setTemperature} from '../../../TestingUtils';
+import {TestPlayer} from '../../../TestPlayer';
+import {PoliticalAgendas} from '../../../../src/server/turmoil/PoliticalAgendas';
+import {Reds} from '../../../../src/server/turmoil/parties/Reds';
 import {MAX_TEMPERATURE} from '../../../../src/common/constants';
+import {testGame} from '../../../TestGame';
 
 describe('ConvertHeat', function() {
-  let card: ConvertHeat; let player: Player;
+  let card: ConvertHeat;
+  let player: TestPlayer;
 
   beforeEach(function() {
     card = new ConvertHeat();
-    player = TestPlayers.BLUE.newPlayer();
-    const player2 = TestPlayers.RED.newPlayer();
-    Game.newInstance('gameid', [player, player2], player, setCustomGameOptions());
+    [/* skipped */, player] = testGame(2, {turmoilExtension: true});
   });
 
   it('Can not act without heat', function() {
@@ -40,14 +38,14 @@ describe('ConvertHeat', function() {
   it('Should play', function() {
     player.heat = 8;
     expect(card.canAct(player)).eq(true);
-    expect(card.action(player)).eq(undefined);
+    expect(churnAction(card, player)).eq(undefined);
     expect(player.game.getTemperature()).eq(-28);
   });
 
   it('Can not act when maximized', function() {
     player.heat = 8;
     expect(card.canAct(player)).eq(true);
-    (player.game as any).temperature = MAX_TEMPERATURE;
+    setTemperature(player.game, MAX_TEMPERATURE);
     expect(card.canAct(player)).eq(false);
   });
 });

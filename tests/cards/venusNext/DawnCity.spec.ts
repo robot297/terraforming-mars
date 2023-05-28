@@ -1,23 +1,18 @@
 import {expect} from 'chai';
-import {DawnCity} from '../../../src/cards/venusNext/DawnCity';
-import {Game} from '../../../src/Game';
-import {Resources} from '../../../src/common/Resources';
-import {setCustomGameOptions} from '../../TestingUtils';
-import {TestPlayers} from '../../TestPlayers';
+import {DawnCity} from '../../../src/server/cards/venusNext/DawnCity';
+import {testGame} from '../../TestGame';
+import {Resource} from '../../../src/common/Resource';
 
 describe('DawnCity', function() {
   it('Should play', function() {
     const card = new DawnCity();
-    const player = TestPlayers.BLUE.newPlayer();
-    const redPlayer = TestPlayers.RED.newPlayer();
-    const gameOptions = setCustomGameOptions();
-    Game.newInstance('gameid', [player, redPlayer], player, gameOptions);
-    player.addProduction(Resources.ENERGY, 1);
-    expect(player.canPlayIgnoringCost(card)).is.not.true;
+    const [, player] = testGame(2, {venusNextExtension: true});
+    player.production.add(Resource.ENERGY, 1);
+    expect(player.simpleCanPlay(card)).is.not.true;
 
     const action = card.play(player);
     expect(action).is.undefined;
-    expect(player.getProduction(Resources.ENERGY)).to.eq(0);
-    expect(player.getProduction(Resources.TITANIUM)).to.eq(1);
+    expect(player.production.energy).to.eq(0);
+    expect(player.production.titanium).to.eq(1);
   });
 });

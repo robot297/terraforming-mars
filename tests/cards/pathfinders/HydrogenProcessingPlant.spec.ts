@@ -1,9 +1,8 @@
 import {expect} from 'chai';
-import {HydrogenProcessingPlant} from '../../../src/cards/pathfinders/HydrogenProcessingPlant';
-import {Game} from '../../../src/Game';
+import {HydrogenProcessingPlant} from '../../../src/server/cards/pathfinders/HydrogenProcessingPlant';
+import {Game} from '../../../src/server/Game';
 import {TestPlayer} from '../../TestPlayer';
-import {TestPlayers} from '../../TestPlayers';
-import {addOcean} from '../../TestingUtils';
+import {addOcean, setOxygenLevel} from '../../TestingUtils';
 import {Units} from '../../../src/common/Units';
 
 describe('HydrogenProcessingPlant', function() {
@@ -13,17 +12,17 @@ describe('HydrogenProcessingPlant', function() {
 
   beforeEach(function() {
     card = new HydrogenProcessingPlant();
-    player = TestPlayers.BLUE.newPlayer();
+    player = TestPlayer.BLUE.newPlayer();
     game = Game.newInstance('gameid', [player], player);
     player.playedCards.push(card);
   });
 
   it('canPlay', function() {
-    (game as any).oxygenLevel = 2;
-    expect(player.canPlayIgnoringCost(card)).is.false;
+    setOxygenLevel(game, 2);
+    expect(player.simpleCanPlay(card)).is.false;
 
-    (game as any).oxygenLevel = 3;
-    expect(player.canPlayIgnoringCost(card)).is.true;
+    setOxygenLevel(game, 3);
+    expect(player.simpleCanPlay(card)).is.true;
   });
 
   it('play', function() {
@@ -37,12 +36,12 @@ describe('HydrogenProcessingPlant', function() {
     addOcean(player);
     addOcean(player);
     addOcean(player);
-    expect(player.getProductionForTest()).deep.eq(Units.EMPTY);
+    expect(player.production.asUnits()).deep.eq(Units.EMPTY);
 
     card.play(player);
 
     expect(game.getOxygenLevel()).eq(2);
-    expect(player.getProductionForTest()).deep.eq(Units.of({energy: 3}));
+    expect(player.production.asUnits()).deep.eq(Units.of({energy: 3}));
   });
 });
 

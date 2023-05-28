@@ -1,24 +1,21 @@
-import {Player} from '../src/Player';
-import {Game} from '../src/Game';
 import {expect} from 'chai';
+import {TestPlayer} from './TestPlayer';
 import {Timer} from '../src/common/Timer';
 import {FakeClock} from './common/FakeClock';
-import {getTestPlayer, newTestGame} from './TestGame';
+import {testGame} from './TestGame';
 
-let game: Game;
-let player: Player;
+let player: TestPlayer;
 let clock: FakeClock;
 let timer: Timer;
 
 describe('EscapeVelocity', function() {
   beforeEach(() => {
-    game = newTestGame(1, {
+    [, player] = testGame(1, {
       escapeVelocityMode: true,
       escapeVelocityThreshold: 3, // 3m
       escapeVelocityPenalty: 2, // 2vp
       escapeVelocityPeriod: 4, // 4m
     });
-    player = getTestPlayer(game, 0);
     (Timer as any).lastStoppedAt = 0;
     clock = new FakeClock();
     timer = Timer.newInstance(clock);

@@ -1,30 +1,32 @@
 import {expect} from 'chai';
-import {OriginalBoard} from '../../src/boards/OriginalBoard';
-import {Player} from '../../src/Player';
+import {TharsisBoard} from '../../src/server/boards/TharsisBoard';
+import {Player} from '../../src/server/Player';
 import {TileType} from '../../src/common/TileType';
-import {ISpace} from '../../src/boards/ISpace';
+import {ISpace} from '../../src/server/boards/ISpace';
 import {SpaceType} from '../../src/common/boards/SpaceType';
-import {TestPlayers} from '../TestPlayers';
-import {Board} from '../../src/boards/Board';
+import {TestPlayer} from '../TestPlayer';
+import {Board} from '../../src/server/boards/Board';
 import {Color} from '../../src/common/Color';
-import {SerializedBoard} from '../../src/boards/SerializedBoard';
-import {MoonSpaces} from '../../src/moon/MoonSpaces';
-import {SeededRandom} from '../../src/Random';
-import {DEFAULT_GAME_OPTIONS, GameOptions} from '../../src/Game';
+import {SerializedBoard} from '../../src/server/boards/SerializedBoard';
+import {MoonSpaces} from '../../src/common/moon/MoonSpaces';
+import {SeededRandom} from '../../src/server/Random';
+import {DEFAULT_GAME_OPTIONS, GameOptions} from '../../src/server/GameOptions';
 import {MultiSet} from 'mnemonist';
 
 describe('Board', function() {
-  let board : OriginalBoard; let player : Player; let player2 : Player;
+  let board: TharsisBoard;
+  let player: TestPlayer;
+  let player2: TestPlayer;
 
   beforeEach(function() {
-    board = OriginalBoard.newInstance(DEFAULT_GAME_OPTIONS, new SeededRandom(0));
-    player = TestPlayers.BLUE.newPlayer();
-    player2 = TestPlayers.RED.newPlayer();
+    board = TharsisBoard.newInstance(DEFAULT_GAME_OPTIONS, new SeededRandom(0));
+    player = TestPlayer.BLUE.newPlayer();
+    player2 = TestPlayer.RED.newPlayer();
 
     // Rather than create a whole game around this test, I'm mocking data to make the tests pass.
     const gameOptions: Partial<GameOptions> = {pathfindersExpansion: false};
-    (player as any)._game = {gameOptions};
-    (player2 as any)._game = {gameOptions};
+    (player as any).game = {gameOptions};
+    (player2 as any).game = {gameOptions};
   });
 
   it('getSpace', () => {
@@ -130,6 +132,26 @@ describe('Board', function() {
       const actual = board.getAdjacentSpaces(space).map((s) => s.id);
       expect(expected).to.eql(actual);
     });
+  });
+
+  it('getAdjacentSpacesClockwise', () => {
+    expect(
+      board.getAdjacentSpacesClockwise(
+        board.getSpace('51'))
+        .map((space) => space?.id))
+      .deep.eq(['43', '44', '52', '58', '57', '50']);
+
+    expect(
+      board.getAdjacentSpacesClockwise(
+        board.getSpace('20'))
+        .map((space) => space?.id))
+      .deep.eq(['13', undefined, undefined, '28', '27', '19']);
+
+    expect(
+      board.getAdjacentSpacesClockwise(
+        board.getSpace('03'))
+        .map((space) => space?.id))
+      .deep.eq([undefined, undefined, '04', '09', '08', undefined]);
   });
 
   it('getNthAvailableLandSpace', function() {
@@ -301,7 +323,7 @@ describe('Board', function() {
     const spaces = new MultiSet<string>();
     for (let idx = 0; idx < 4_000; idx++) {
       const seed = Math.random();
-      board = OriginalBoard.newInstance({
+      board = TharsisBoard.newInstance({
         ...DEFAULT_GAME_OPTIONS,
         shuffleMapOption: true,
       },

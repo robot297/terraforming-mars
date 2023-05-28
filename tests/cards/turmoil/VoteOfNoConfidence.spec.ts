@@ -1,31 +1,41 @@
 import {expect} from 'chai';
-import {VoteOfNoConfidence} from '../../../src/cards/turmoil/VoteOfNoConfidence';
-import {Game} from '../../../src/Game';
+import {VoteOfNoConfidence} from '../../../src/server/cards/turmoil/VoteOfNoConfidence';
 import {PartyName} from '../../../src/common/turmoil/PartyName';
-import {setCustomGameOptions} from '../../TestingUtils';
-import {TestPlayers} from '../../TestPlayers';
+import {runAllActions} from '../../TestingUtils';
 import {isPlayerId, PlayerId} from '../../../src/common/Types';
+import {testGame} from '../../TestGame';
 
 describe('VoteOfNoConfidence', function() {
   it('Should play', function() {
     const card = new VoteOfNoConfidence();
-    const player = TestPlayers.BLUE.newPlayer();
-
-    const gameOptions = setCustomGameOptions();
-    const game = Game.newInstance('gameid', [player], player, gameOptions);
+    const [game, player] = testGame(1, {turmoilExtension: true});
     const turmoil = game.turmoil!;
-    expect(player.canPlayIgnoringCost(card)).is.not.true;
+    expect(player.simpleCanPlay(card)).is.not.true;
 
     turmoil.chairman = 'NEUTRAL';
-    expect(player.canPlayIgnoringCost(card)).is.not.true;
+    expect(player.simpleCanPlay(card)).is.not.true;
 
-    const greens = game.turmoil!.getPartyByName(PartyName.GREENS)!;
+    const greens = game.turmoil!.getPartyByName(PartyName.GREENS);
     greens.partyLeader = player.id;
-    expect(player.canPlayIgnoringCost(card)).is.true;
+    expect(player.simpleCanPlay(card)).is.true;
 
     card.play(player);
     expect(isPlayerId(turmoil.chairman)).is.true;
     expect(game.getPlayerById(turmoil.chairman as PlayerId)).to.eq(player);
+    runAllActions(game);
     expect(player.getTerraformRating()).to.eq(15);
+  });
+
+  it('Neutral Delegate returns to Reserve', function() {
+    const card = new VoteOfNoConfidence();
+    const [game, player] = testGame(1, {turmoilExtension: true});
+    const turmoil = game.turmoil!;
+    const neutralReserve = turmoil.getAvailableDelegateCount('NEUTRAL');
+    turmoil.chairman = 'NEUTRAL';
+    const greens = game.turmoil!.getPartyByName(PartyName.GREENS);
+    greens.partyLeader = player.id;
+    card.play(player);
+    runAllActions(game);
+    expect(turmoil.getAvailableDelegateCount('NEUTRAL')).to.eq(neutralReserve+1);
   });
 });
